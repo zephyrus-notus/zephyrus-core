@@ -2,9 +2,16 @@ import admin from 'firebase-admin';
 import axios from 'axios';
 import { GoogleGenAI } from '@google/genai';
 
-// 1. Initialize Firebase Admin (Auto-detects credentials from the environment)
+// 1. Initialize Firebase Admin (Requires explicit config on Vercel)
 if (!admin.apps.length) {
-    admin.initializeApp();
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        }),
+        databaseURL: process.env.FIREBASE_DATABASE_URL
+    });
 }
 
 const db = admin.database();
