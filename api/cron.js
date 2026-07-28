@@ -141,8 +141,8 @@ export default async function handler(req, res) {
         // Generate the message (tries AI first with the new persona, uses fallback if needed)
         const messagePayload = await getDynamicWeatherMessage(hardwareData.temperature, meteoData, currentHour);
 
-        // Retrieve all registered FCM tokens
-        const tokensSnapshot = await db.ref('fcm_tokens').once('value');
+        // Retrieve all registered FCM tokens (UPDATED: points to 'tokens')
+        const tokensSnapshot = await db.ref('tokens').once('value');
         if (!tokensSnapshot.exists()) return res.status(200).json({ message: 'No subscribers found. Skipped.' });
 
         const tokens = [];
@@ -160,14 +160,14 @@ export default async function handler(req, res) {
         // Send via Firebase Admin
         const response = await messaging.sendEachForMulticast(fcmMessage);
         
-        // Database maintenance: remove expired tokens
+        // Database maintenance: remove expired tokens (UPDATED: points to 'tokens')
         const tokensToRemove = [];
         response.responses.forEach((resp, idx) => {
             if (!resp.success) {
                 const errorCode = resp.error?.code;
                 if (errorCode === 'messaging/invalid-registration-token' || errorCode === 'messaging/registration-token-not-registered') {
                     const tokenKey = tokens[idx].replace(/[^a-zA-Z0-9]/g, "").slice(-64);
-                    tokensToRemove.push(db.ref(`fcm_tokens/${tokenKey}`).remove());
+                    tokensToRemove.push(db.ref(`tokens/${tokenKey}`).remove());
                 }
             }
         });
