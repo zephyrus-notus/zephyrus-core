@@ -1,5 +1,14 @@
 {
+  "name": "zephyrus-core",
+  "version": "1.0.0",
+  "description": "Zephyrus automated weather and notification system",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: Test is specified\" && exit 0"
+  },
   "dependencies": {
-    "firebase-admin": "^14.2.0"
+    "axios": "^1.6.8",
+    "firebase": "^10.0.0",
+    "firebase-admin": "^12.0.0"
   }
 }
