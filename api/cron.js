@@ -2,24 +2,16 @@ import admin from 'firebase-admin';
 import axios from 'axios';
 import { GoogleGenAI } from '@google/genai';
 
-// 1. Initialize Firebase Admin (Only once per serverless instance)
+// 1. Initialize Firebase Admin (Auto-detects credentials from the environment)
 if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            // Vercel env vars escape newlines; this regex fixes the formatting
-            privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-        }),
-        databaseURL: process.env.FIREBASE_DATABASE_URL
-    });
+    admin.initializeApp();
 }
 
 const db = admin.database();
 const messaging = admin.messaging();
 
-// 2. Initialize Gemini API Client
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// 2. Initialize Gemini API Client (Automatically picks up process.env.GEMINI_API_KEY)
+const ai = new GoogleGenAI({});
 
 // 3. Robust Fallback Generator (Infused with physics sarcasm, literature, and wit)
 function getFallbackWeatherMessage(hardwareTemp, meteoData, currentHour) {
@@ -27,7 +19,7 @@ function getFallbackWeatherMessage(hardwareTemp, meteoData, currentHour) {
     const windSpeed = meteoData.wind_speed_10m;
     const isNight = currentHour >= 19 || currentHour < 5;
     const isMorning = currentHour >= 5 && currentHour < 12;
-    
+
     let title = "Zephyrus Core";
     let body = "";
 
@@ -93,10 +85,10 @@ async function getDynamicWeatherMessage(hardwareTemp, meteoData, currentHour) {
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
-                temperature: 0.85 // Slightly higher temperature for more creative, witty output
+                temperature: 0.85
             }
         });
-        
+
         return JSON.parse(response.text);
     } catch (error) {
         console.error("Gemini Generation Error. Engaging fallback logic:", error);
@@ -122,8 +114,8 @@ export default async function handler(req, res) {
 
     if (currentHour >= 21 || currentHour < 6) {
         console.log("Quiet hours active. Skipping execution.");
-        return res.status(200).json({ 
-            message: "Quiet hours active (9 PM - 6 AM). Notifications skipped." 
+        return res.status(200).json({
+            message: "Quiet hours active (9 PM - 6 AM). Notifications skipped."
         });
     }
     // ==========================================
@@ -137,11 +129,44 @@ export default async function handler(req, res) {
         // Fetch Hardware Telemetry
         const paramSnapshot = await db.ref('parameters').once('value');
         const hardwareData = paramSnapshot.exists() ? paramSnapshot.val() : { temperature: meteoData.temperature_2m };
-        
-        // Generate the message (tries AI first with the new persona, uses fallback if needed)
-        const messagePayload = await getDynamicWeatherMessage(hardwareData.temperature, meteoData, currentHour);
 
-        // Retrieve all registered FCM tokens (UPDATED: points to 'tokens')
+        const currentTemp = hardwareData.temperature;
+        const currentWmo = meteoData.weather_code;
+
+        // ==========================================
+        // DELTA INTELLIGENCE LOGIC
+        // Skip sending a notification if nothing meaningful changed
+        // since the last alert, unless a heartbeat interval has elapsed.
+        // ==========================================
+        const lastSnapshot = await db.ref('last_telemetry').once('value');
+        const lastTelemetry = lastSnapshot.exists() ? lastSnapshot.val() : null;
+
+        let tempDiff = null;
+        let wmoChanged = null;
+
+        if (lastTelemetry) {
+            tempDiff = Math.abs(currentTemp - lastTelemetry.temperature);
+            wmoChanged = currentWmo !== lastTelemetry.weather_code;
+
+            // Force an update if more than 8 hours have passed (heartbeat update)
+            const hoursSinceLastAlert = (Date.now() - (lastTelemetry.timestamp || 0)) / (1000 * 60 * 60);
+
+            // Skip notification if temperature change is < 2°C, weather condition is identical, and < 8 hrs elapsed
+            if (tempDiff < 2 && !wmoChanged && hoursSinceLastAlert < 8) {
+                console.log(`Weather static (Temp diff: ${tempDiff.toFixed(1)}°C, WMO: ${currentWmo}). Skipping notification.`);
+                return res.status(200).json({
+                    message: 'Telemetry static. Alert suppressed.',
+                    tempDiff,
+                    wmoChanged
+                });
+            }
+        }
+        // ==========================================
+
+        // Generate the message
+        const messagePayload = await getDynamicWeatherMessage(currentTemp, meteoData, currentHour);
+
+        // Retrieve all registered FCM tokens
         const tokensSnapshot = await db.ref('tokens').once('value');
         if (!tokensSnapshot.exists()) return res.status(200).json({ message: 'No subscribers found. Skipped.' });
 
@@ -159,8 +184,15 @@ export default async function handler(req, res) {
 
         // Send via Firebase Admin
         const response = await messaging.sendEachForMulticast(fcmMessage);
-        
-        // Database maintenance: remove expired tokens (UPDATED: points to 'tokens')
+
+        // Save current telemetry as the new baseline for delta comparisons
+        await db.ref('last_telemetry').set({
+            temperature: currentTemp,
+            weather_code: currentWmo,
+            timestamp: Date.now()
+        });
+
+        // Database maintenance: remove expired tokens
         const tokensToRemove = [];
         response.responses.forEach((resp, idx) => {
             if (!resp.success) {
@@ -173,11 +205,13 @@ export default async function handler(req, res) {
         });
         await Promise.all(tokensToRemove);
 
-        return res.status(200).json({ 
-            success: true, 
-            ai_title: messagePayload.title, 
+        return res.status(200).json({
+            success: true,
+            ai_title: messagePayload.title,
             sentCount: response.successCount,
-            removedCount: tokensToRemove.length 
+            removedCount: tokensToRemove.length,
+            tempDiff,
+            wmoChanged
         });
 
     } catch (error) {
