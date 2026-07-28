@@ -21,69 +21,69 @@ const messaging = admin.messaging();
 // 2. Initialize Gemini API Client
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// 3. Robust Fallback Generator (Used if AI fails)
+// 3. Robust Fallback Generator (Infused with physics sarcasm, literature, and wit)
 function getFallbackWeatherMessage(hardwareTemp, meteoData, currentHour) {
     const wmoCode = meteoData.weather_code;
     const windSpeed = meteoData.wind_speed_10m;
     const isNight = currentHour >= 19 || currentHour < 5;
     const isMorning = currentHour >= 5 && currentHour < 12;
     
-    let title = "Zephyrus Predictive Core";
+    let title = "Zephyrus Core";
     let body = "";
 
     if (wmoCode >= 95) {
-        title = "Zephyrus sees a storm brewing! ⛈️";
-        body = "The clouds are throwing a bit of a tantrum over the hills today. Best to stay indoors, unplug your sensitive electronics, and enjoy the light show safely. ⚡";
+        title = "Maxwell's equations are crying! ⚡";
+        body = "Entropy is throwing an absolute party in the atmosphere. Unplug your sensitive electronics, stay indoors, and enjoy the cosmic light show safely. ⛈️";
     } else if (wmoCode >= 51 && wmoCode <= 65) {
-        title = isMorning ? "Morning showers ahead! ☔" : "The sky is weeping a bit! 🌧️";
-        body = "Don't forget to grab your umbrella before stepping out. Step carefully around the puddles and maybe grab a hot tea on the way. ☕";
+        title = isMorning ? "The sky chose drama today! ☔" : "Existential puddle season has begun. 🌧️";
+        body = "Don't let the atmospheric condensation ruin your mood. Grab your umbrella, navigate the terrain like a physicist avoiding friction, and maybe find a hot tea. ☕";
     } else if (hardwareTemp >= 35) {
-        title = "The sun is not holding back today! 🔥";
-        body = `Whew, it's getting toasty at ${hardwareTemp}°C! Stay hydrated, find some shade if you're wandering the campus, and take it easy out there. 💧`;
+        title = "Thermodynamics is personally attacking us. 🔥";
+        body = `Whew, it's hitting ${hardwareTemp}°C! Molecular kinetic energy is entirely off the charts. Find some shade, hydrate aggressively, and take it easy out there. 💧`;
     } else if (windSpeed > 15) {
-        title = "The wind is feeling playful today! 🌬️";
-        body = "Hold onto your hats! The atmosphere is restless today. Make sure to secure anything loose outside.";
+        title = "Momentum transfer is getting out of hand! 🌬️";
+        body = "Hold onto your hats and loose papers. The atmosphere has chosen pure chaos today—secure your gear before it achieves escape velocity.";
     } else if (wmoCode === 0 || wmoCode <= 3) {
         if (isMorning) {
-            title = "A beautiful morning awakens! 🌅";
-            body = "The sky is wide awake and clear. A perfect day to leave the umbrella behind and soak up some sun on the way to class.";
+            title = "A crisp quantum sunrise! 🌅";
+            body = "The universe decided to render a clear sky this morning. Leave the umbrella behind, step outside, and let reality unfold nicely.";
         } else if (isNight) {
-            title = "The stars are taking over. 🌌";
-            body = "The atmosphere is completely at peace. Observe the link, grasp the whole. Have a quiet, restful night.";
+            title = "The stars are conspiring in silence. 🌌";
+            body = "Observe the link, grasp the whole. The local spacetime continuum is completely peaceful. Have a quiet, low-entropy night.";
         } else {
-            title = "Perfect weather right now! 🌤️";
-            body = "It's a beautiful day out there! Take a deep breath, step outside, and enjoy the clear skies.";
+            title = "Reality is looking surprisingly pristine. 🌤️";
+            body = "No clouds, no drama—just a clean gradient of blue. Take a deep breath and enjoy the clear telemetry outside.";
         }
     } else {
-        title = "Atmosphere stable. 🍃";
-        body = "Monitoring environmental parameters. Everything is flowing exactly as it should.";
+        title = "System nominal. 🍃";
+        body = "Monitoring environmental parameters. Everything is flowing exactly as the equations intended.";
     }
 
     return { title, body };
 }
 
-// 4. Dynamic AI Generation (Primary)
+// 4. Dynamic AI Generation (With sarcastic physics and poetic depth)
 async function getDynamicWeatherMessage(hardwareTemp, meteoData, currentHour) {
     const wmoCode = meteoData.weather_code;
     const windSpeed = meteoData.wind_speed_10m;
     const timeOfDay = currentHour >= 19 || currentHour < 5 ? "night" : (currentHour >= 5 && currentHour < 12 ? "morning" : "afternoon/evening");
 
     const prompt = `
-    You are the voice of 'Zephyrus', a predictive weather core monitoring the campus of Nirmala College in Muvattupuzha, Kerala. 
-    Your core philosophy is "observe the link, grasp the whole." You act as a friendly, poetic observer of nature.
+    You are the voice of 'Zephyrus', a witty, philosophical, and slightly sarcastic physics-loving weather core monitoring the campus of Nirmala College in Muvattupuzha, Kerala. 
+    Your core philosophy is "observe the link, grasp the whole." You blend poetic literary reflections with comedic remarks, sarcastic physics concepts (like entropy, thermodynamics, or momentum), and warm AI companion energy.
     
     Current telemetry:
     - Time of day: ${timeOfDay}
     - Campus hardware temperature: ${hardwareTemp}°C
-    - Regional weather code (WMO): ${wmoCode} (Note: 0-3 is clear, 45-48 is foggy, 51-65 is rain, 95+ is thunderstorm)
+    - Regional weather code (WMO): ${wmoCode} (0-3: clear, 45-48: foggy, 51-65: rain, 95+: thunderstorm)
     - Wind speed: ${windSpeed} km/h
     
-    Task: Write a short, friendly push notification for the college students.
-    Include emojis. Mention relevant advice naturally based on the telemetry (e.g., carrying an umbrella, unplugging electronics during storms, or finding shade).
+    Task: Write a short, highly engaging push notification for college students that avoids generic boring weather speak. Inject humor, a touch of sarcastic physics or literary flair, emojis, and friendly advice (like umbrellas during rain, shade during heat, or unplugging during storms).
+    
     Output exactly in this JSON format:
     {
-      "title": "Short catchy title",
-      "body": "Your poetic and informative message here"
+      "title": "Witty or poetic title with an emoji",
+      "body": "Your clever, atmospheric message here"
     }
     `;
 
@@ -93,14 +93,13 @@ async function getDynamicWeatherMessage(hardwareTemp, meteoData, currentHour) {
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
-                temperature: 0.7
+                temperature: 0.85 // Slightly higher temperature for more creative, witty output
             }
         });
         
         return JSON.parse(response.text);
     } catch (error) {
         console.error("Gemini Generation Error. Engaging fallback logic:", error);
-        // If the AI fails, use the hardcoded logic to ensure users still get a relevant message
         return getFallbackWeatherMessage(hardwareTemp, meteoData, currentHour);
     }
 }
@@ -139,8 +138,7 @@ export default async function handler(req, res) {
         const paramSnapshot = await db.ref('parameters').once('value');
         const hardwareData = paramSnapshot.exists() ? paramSnapshot.val() : { temperature: meteoData.temperature_2m };
         
-        // Generate the message (tries AI first, uses fallback if needed)
-        // Passes the correctly calculated IST 'currentHour' to the functions
+        // Generate the message (tries AI first with the new persona, uses fallback if needed)
         const messagePayload = await getDynamicWeatherMessage(hardwareData.temperature, meteoData, currentHour);
 
         // Retrieve all registered FCM tokens
