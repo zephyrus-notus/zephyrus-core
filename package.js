@@ -1,0 +1,10 @@
+{
+  "name": "zephyrus-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@google/genai": "^0.1.2",
+    "axios": "^1.7.2",
+    "firebase-admin": "^12.2.0"
+  }
+}

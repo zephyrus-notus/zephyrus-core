@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1280">
+    <!-- NOTE: fixed width (not device-width) is intentional here -- it makes phones
+         render the exact same desktop layout/spacing/grid, then the browser's own
+         zoom-to-fit shrinks the whole page down. Pinch-to-zoom still works for reading
+         detail. -->
+    <title>Nirmala College | Zephyrus Predictive Core</title>
+    <!-- Manifest inlined as a data URI so this stays a single file. -->
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIlplcGh5cnVzIFByZWRpY3RpdmUgQ29yZSAtIE5pcm1hbGEgQ29sbGVnZSIsICJzaG9ydF9uYW1lIjogIlplcGh5cnVzIiwgInN0YXJ0X3VybCI6ICIuLyIsICJzY29wZSI6ICIuLyIsICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGEwZjFlIiwgInRoZW1lX2NvbG9yIjogIiMwYTBmMWUiLCAiaWNvbnMiOiBbeyJzcmMiOiAibG9nby53ZWJwIiwgInNpemVzIjogIjE5MngxOTIiLCAidHlwZSI6ICJpbWFnZS93ZWJwIiwgInB1cnBvc2UiOiAiYW55In0sIHsic3JjIjogImxvZ28ud2VicCIsICJzaXplcyI6ICI1MTJ4NTEyIiwgInR5cGUiOiAiaW1hZ2Uvd2VicCIsICJwdXJwb3NlIjogImFueSJ9XX0=">
+    <meta name="theme-color" content="#0a0f1e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Zephyrus">
+    <link rel="apple-touch-icon" href="logo.webp">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root { --glass-bg: rgba(15, 23, 42, 0.45); --border-color: rgba(255, 255, 255, 0.15); }
+
+        body {
+            margin: 0; font-family: 'Inter', sans-serif;
+            background-size: cover; color: white; scroll-behavior: smooth;
+            overflow-x: hidden;
+            transition: background 2.5s ease-in-out, filter 2.5s;
+        }
+
+        .font-tech {
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.05em;
+        }
+
+        /* --- DYNAMIC WEATHER + TIME-OF-DAY THEMES --- */
+        .theme-default { background: linear-gradient(rgba(10, 15, 30, 0.85), rgba(10, 15, 30, 0.75)), url('maxresdefault.jpg') no-repeat center center fixed; background-size: cover; }
+
+        /* Clear sky family */
+        .theme-clear-dawn  { background: linear-gradient(180deg, rgba(99, 60, 130, 0.55), rgba(244, 114, 89, 0.45), rgba(251, 191, 36, 0.35)), url('maxresdefault.jpg') no-repeat center center fixed; background-size: cover; }
+        .theme-clear-day   { background: linear-gradient(180deg, rgba(56, 132, 220, 0.35), rgba(245, 158, 11, 0.3), rgba(234, 88, 12, 0.4)), url('maxresdefault.jpg') no-repeat center center fixed; background-size: cover; }
+        .theme-clear-dusk  { background: linear-gradient(180deg, rgba(49, 30, 90, 0.6), rgba(219, 39, 90, 0.45), rgba(251, 146, 60, 0.4)), url('maxresdefault.jpg') no-repeat center center fixed; background-size: cover; }
+        .theme-clear-night { background: linear-gradient(180deg, rgba(6, 10, 30, 0.92), rgba(20, 25, 60, 0.85), rgba(30, 27, 75, 0.8)), url('maxresdefault.jpg') no-repeat center center fixed; background-size: cover; }
+
+        /* Cloudy / foggy family */
+        .theme-clouds-dawn  { background: linear-gradient(180deg, rgba(88, 70, 110, 0.6), rgba(120, 113, 145, 0.55)), url('maxresdefault.jpg') no-repeat center center fixed; background-size: cover; }
+        .theme-clouds-day   { background: linear-gradient(180deg, rgba(71, 85, 105, 0.6), rgba(30, 41, 59, 0.8)), url('maxresdefault.jpg') no-repeat center center fixed; background-size: cover; }
+        .theme-clouds-dusk  { background: linear-gradient(180deg, rgba(60, 45, 80, 0.65), rgba(38, 30, 55, 0.85)), url('maxresdefault.jpg') no-repeat center center fixed; background-size: cover; }
+        .theme-clouds-night { background: linear-gradient(180deg, rgba(8, 10, 22, 0.92), rgba(15, 18, 35, 0.9)), url('maxresdefault.jpg') no-repeat center center fixed; background-size: cover; }
+
+        /* Rain / storm family */
+        .theme-rain-dawn, .theme-rain-day, .theme-rain-dusk { background: linear-gradient(180deg, rgba(15, 23, 55, 0.85), rgba(2, 6, 23, 0.92)), url('maxresdefault.jpg') no-repeat center center fixed; background-size: cover; }
+        .theme-rain-night, .theme-thunderstorm, .theme-drizzle { background: linear-gradient(180deg, rgba(2, 6, 23, 0.92), rgba(0, 0, 0, 0.97)), url('maxresdefault.jpg') no-repeat center center fixed; background-size: cover; }
+
+        @keyframes sun-glow { 0%, 100% { filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.4)); transform: scale(1); } 50% { filter: drop-shadow(0 0 25px rgba(251, 191, 36, 0.8)); transform: scale(1.01); } }
+        .anim-sunny { animation: sun-glow 5s ease-in-out infinite; }
+        @keyframes moon-glow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(199, 210, 254, 0.45)); transform: scale(1); } 50% { filter: drop-shadow(0 0 22px rgba(199, 210, 254, 0.85)); transform: scale(1.01); } }
+        .anim-moonlit { animation: moon-glow 6s ease-in-out infinite; }
+        @keyframes lightning-flicker { 0%, 95%, 100% { opacity: 1; filter: brightness(1); } 96%, 98% { opacity: 0.8; filter: brightness(2) drop-shadow(0 0 30px white); } 97% { opacity: 1; filter: brightness(0.5); } }
+        .anim-stormy { animation: lightning-flicker 8s infinite; }
+        @keyframes wind-sway { 0%, 100% { transform: skewX(0deg); } 25% { transform: skewX(-3deg); } 75% { transform: skewX(2deg); } }
+        .anim-windy { animation: wind-sway 4s ease-in-out infinite; }
+
+        .glass {
+            background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color); border-radius: 1.25rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); transition: all 1s ease;
+        }
+
+        .zephyrus-title {
+            font-weight: 900; text-transform: uppercase;
+            background: linear-gradient(to right, #4ade80, #3b82f6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .switch { position: relative; display: inline-block; width: 36px; height: 18px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.2); transition: .4s; border-radius: 18px; }
+        input:checked + .slider { background-color: #10b981; }
+        .fade-text { transition: opacity 0.5s ease; }
+
+        @keyframes pulse-ring {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.55); }
+            50% { box-shadow: 0 0 0 5px rgba(59, 130, 246, 0); }
+        }
+        .toggle-pulse { animation: pulse-ring 1.6s ease-in-out infinite; }
+
+        @keyframes bar-fill { from { width: 0%; } }
+        .storage-bar-inner { transition: width 1.2s ease, background-color 0.6s ease; }
+
+        @keyframes banner-drop { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+        .banner-in { animation: banner-drop 0.5s ease; }
+
+        .forecast-cell { transition: transform 0.3s ease; }
+        .forecast-cell:hover { transform: translateY(-4px); }
+
+        #weather-fx { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+        @keyframes rain-fall { from { transform: translateY(-10vh); } to { transform: translateY(110vh); } }
+        .rain-drop { position: absolute; top: -10vh; width: 2px; height: 55px; border-radius: 2px;
+            background: linear-gradient(to bottom, rgba(186, 219, 255, 0.75), rgba(186, 219, 255, 0));
+            animation-name: rain-fall; animation-timing-function: linear; animation-iteration-count: infinite; }
+        @keyframes lightning-flash { 0%, 100% { opacity: 0; } 96% { opacity: 0; } 97% { opacity: 0.85; } 98% { opacity: 0.05; } 99% { opacity: 0.6; } }
+        .lightning-overlay { position: fixed; inset: 0; background: white; opacity: 0; animation: lightning-flash 7s infinite; }
+        @keyframes wind-line { from { transform: translateX(-15vw); opacity: 0; } 15% { opacity: 0.55; } 85% { opacity: 0.35; } to { transform: translateX(115vw); opacity: 0; } }
+        .wind-line { position: absolute; height: 1.5px; background: rgba(255,255,255,0.5); border-radius: 2px;
+            animation-name: wind-line; animation-timing-function: linear; animation-iteration-count: infinite; }
+        @keyframes sun-ray-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .sun-rays { position: absolute; top: 6%; right: 4%; width: 320px; height: 320px; border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(251,191,36,0.16), transparent 20%, rgba(251,191,36,0.16) 40%, transparent 60%, rgba(251,191,36,0.16) 80%, transparent 100%);
+            animation: sun-ray-rotate 40s linear infinite; }
+        @media (max-width: 640px) {
+            .sun-rays { width: 170px; height: 170px; top: 4%; right: -10%; }
+        }
+
+        @keyframes moon-drift-glow { 0%, 100% { filter: drop-shadow(0 0 18px rgba(199,210,254,0.35)); } 50% { filter: drop-shadow(0 0 32px rgba(199,210,254,0.6)); } }
+        .moon-disc {
+            position: absolute; top: 7%; right: 6%; width: 96px; height: 96px; border-radius: 50%;
+            background: radial-gradient(circle at 38% 35%, #f8fafc 0%, #e2e8f0 45%, #c7d2fe 100%);
+            box-shadow: inset -18px -10px 0 0 rgba(30, 27, 75, 0.28), 0 0 40px rgba(199, 210, 254, 0.35);
+            animation: moon-drift-glow 6s ease-in-out infinite;
+        }
+        .moon-halo {
+            position: absolute; top: 2%; right: 1%; width: 200px; height: 200px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(199,210,254,0.16) 0%, transparent 70%);
+        }
+        @media (max-width: 640px) {
+            .moon-disc { width: 58px; height: 58px; top: 5%; right: 8%; }
+            .moon-halo { width: 130px; height: 130px; top: 2%; right: 2%; }
+        }
+        @keyframes star-twinkle { 0%, 100% { opacity: 0.15; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1); } }
+        .star { position: absolute; background: white; border-radius: 50%; animation-name: star-twinkle; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+
+        @keyframes fog-drift { from { transform: translateX(-20vw); } to { transform: translateX(20vw); } }
+        .fog-wisp { position: absolute; height: 120px; border-radius: 50%; filter: blur(30px);
+            background: rgba(255,255,255,0.10); animation-name: fog-drift; animation-timing-function: ease-in-out;
+            animation-direction: alternate; animation-iteration-count: infinite; }
+
+        #notif-modal-overlay { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.72); backdrop-filter: blur(4px); }
+        #notif-modal-overlay.visible { display: flex; }
+        #confirm-modal-overlay { position: fixed; inset: 0; z-index: 210; display: none; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.78); backdrop-filter: blur(4px); }
+        #confirm-modal-overlay.visible { display: flex; }
+        @keyframes modal-pop { from { opacity: 0; transform: scale(0.92) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal-in { animation: modal-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        #toast-stack { position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 220; display: flex; flex-direction: column; gap: 0.6rem; max-width: 320px; }
+        .toast { padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 12px; line-height: 1.4; backdrop-filter: blur(10px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.45); animation: toast-in 0.35s ease, toast-out 0.4s ease 4.6s forwards; }
+        .toast-success { background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.5); color: #d1fae5; }
+        .toast-error { background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.5); color: #fee2e2; }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toast-out { to { opacity: 0; transform: translateY(-6px); } }
+
+        .dashboard-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+        .data-cards { display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; }
+        .dashboard-controls #sync-status, .data-cards > div {
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.05em;
+        }
+        #export-btn {
+            background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #6ee7b7; padding: 0.45rem 1rem; border-radius: 0.5rem;
+            font-weight: 700; font-size: 11px; letter-spacing: 0.05em; cursor: pointer;
+            transition: all 0.2s ease; font-family: 'JetBrains Mono', monospace;
+        }
+        #export-btn:hover:not(:disabled) { background: rgba(16, 185, 129, 0.3); }
+        #export-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        @media (max-width: 639px) {
+            .dashboard-controls { flex-direction: column; align-items: stretch; }
+            .dashboard-controls #export-btn { width: 100%; }
+            .data-cards { flex-direction: column; gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen theme-default" id="main-body">
+
+    <div id="weather-fx"></div>
+    <div id="toast-stack"></div>
+
+    <div id="notif-modal-overlay">
+        <div class="glass modal-in max-w-md w-[92%] sm:w-[90%] p-6 sm:p-8 text-center border border-blue-500/40">
+            <div class="text-4xl sm:text-5xl mb-3">🔔</div>
+            <h3 class="text-base sm:text-lg font-black uppercase tracking-widest text-blue-400 mb-2">Let the Sky Speak to You</h3>
+            <p class="text-xs sm:text-sm text-white/80 mb-2 leading-relaxed italic">"Some mornings arrive with sunlight, others with quiet rain — either way, you deserve a gentle word before you step outside."</p>
+            <p class="text-xs sm:text-sm text-white/60 mb-6 leading-relaxed">Let Zephyrus watch the sky for you, and softly say when it turns to storms, sudden heat, or restless wind — a small kindness, refreshed every 30 minutes from our own campus sensor.</p>
+            <div class="flex gap-3 justify-center flex-wrap">
+                <button onclick="enableNotifications()" class="bg-emerald-600 hover:bg-emerald-500 px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors">Yes, Keep Me Posted</button>
+                <button onclick="dismissModal()" class="bg-white/10 hover:bg-white/20 px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors">Maybe Later</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal-overlay">
+        <div class="glass modal-in max-w-md w-[92%] sm:w-[90%] p-6 sm:p-8 text-center border border-red-500/40">
+            <div class="text-4xl sm:text-5xl mb-3">⚠️</div>
+            <h3 class="text-base sm:text-lg font-black uppercase tracking-widest text-red-400 mb-2" id="confirm-modal-title">Confirm Permanent Deletion</h3>
+            <p class="text-xs sm:text-sm text-white/70 mb-6 leading-relaxed" id="confirm-modal-body">This will permanently remove log entries from Firebase. This action cannot be undone.</p>
+            <div class="flex gap-3 justify-center flex-wrap">
+                <button id="confirm-modal-yes" class="bg-red-600 hover:bg-red-500 px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors">Yes, Delete Forever</button>
+                <button id="confirm-modal-no" class="bg-white/10 hover:bg-white/20 px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="w-full bg-black/70 backdrop-blur-md px-4 sm:px-8 py-3 flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-3 sm:gap-0 border-b border-white/10 sticky top-0 z-50">
+        <div class="flex flex-wrap items-center gap-3 sm:gap-6 font-mono text-[9px] sm:text-[10px] tracking-widest text-emerald-400">
+            <span class="animate-pulse">● SYSTEM_LINK: ACTIVE</span>
+            <span id="esp-heartbeat" class="flex items-center gap-1.5 text-white/40">
+                <span id="esp-heartbeat-dot" class="w-2 h-2 rounded-full bg-white/30"></span>
+                <span id="esp-heartbeat-text">ESP32: WAITING...</span>
+            </span>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 sm:gap-4 text-[9px] sm:text-[10px] font-mono tracking-widest w-full sm:w-auto">
+            <span class="hidden sm:inline">ALERTS</span>
+            <label class="switch"><input type="checkbox" id="notif-toggle"><span class="slider"></span></label>
+
+            <div id="current-time" class="sm:ml-4 sm:border-l border-white/20 sm:pl-4">00:00:00</div>
+
+            <button onclick="secureDataExport()" class="ml-auto sm:ml-4 border border-emerald-500/50 bg-emerald-900/30 hover:bg-emerald-600/50 text-emerald-300 px-2.5 sm:px-3 py-1 rounded transition-colors font-bold cursor-pointer shadow-lg shadow-emerald-500/20 whitespace-nowrap text-[9px] sm:text-[10px]">
+                🔒 EXPORT DATA
+            </button>
+        </div>
+    </nav>
+
+    <div class="dashboard-controls glass mx-4 sm:mx-6 md:mx-10 mt-4 p-4">
+        <div id="sync-status">Status: Waiting for backend updates...</div>
+    </div>
+    <div class="data-cards glass mx-4 sm:mx-6 md:mx-10 mt-4 p-4">
+        <div id="esp-data" class="text-emerald-300">ESP32 Temp: -- °C | Hum: -- %</div>
+        <div id="meteo-data" class="text-blue-300">Meteo Temp: -- °C | Hum: -- %</div>
+        <div id="last-update" class="text-white/50">Last Update: --</div>
+    </div>
+
+    <header class="flex flex-col md:flex-row items-center justify-between w-full px-4 sm:px-6 md:px-10 py-6 sm:py-8 gap-4 sm:gap-6" id="dashboard">
+        <div class="hover:scale-105 transition-transform duration-500 w-full md:w-auto flex justify-center md:justify-start">
+            <img src="logo.webp" alt="Nirmala College" class="h-24 md:h-32 w-auto object-contain shadow-xl shadow-blue-500/20 rounded-xl bg-white p-3">
+        </div>
+        <h2 class="zephyrus-title text-4xl sm:text-5xl md:text-7xl drop-shadow-2xl text-center md:text-right font-tech w-full md:w-auto" id="zephyrus-title">ZEPHYRUS</h2>
+    </header>
+
+    <main class="flex-1 px-4 sm:px-6 md:px-10 pb-12 space-y-4 sm:space-y-6">
+        <div class="glass p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-3 sm:gap-6 border-l-4 border-blue-500 bg-gradient-to-r from-blue-900/40 to-transparent transition-all duration-700" id="intel-warning">
+            <div class="text-4xl sm:text-5xl drop-shadow-xl transition-transform hover:rotate-12 cursor-pointer" id="warning-emoji">🔮</div>
+            <div class="flex-1 text-center sm:text-left">
+                <div class="flex flex-wrap justify-center sm:justify-between items-end mb-1 gap-1">
+                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Zephyrus Predictive Core</p>
+                    <span class="text-[9px] font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/30">AI_ACTIVE</span>
+                </div>
+                <p class="text-base sm:text-lg font-medium tracking-tight text-white/95 leading-relaxed fade-text" id="warning-msg">Synchronizing quantum states and meteorological data. Stand by...</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div class="lg:col-span-2 flex items-center gap-2 px-1 -mb-2">
+                <span class="text-emerald-400 text-sm">📟</span>
+                <p class="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-300">Weather at Nirmala Hills <span class="text-white/40 normal-case tracking-normal font-semibold">— live device reading</span></p>
+            </div>
+            <div class="lg:col-span-2 flex items-center gap-2 px-1 -mb-2">
+                <span class="text-blue-400 text-sm">🌐</span>
+                <p class="text-[10px] font-black uppercase tracking-[0.25em] text-blue-300">Regional Forecast <span class="text-white/40 normal-case tracking-normal font-semibold">— Open-Meteo web data</span></p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div class="glass p-4 sm:p-6 flex flex-col items-center text-center">
+                <h4 class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-4">Temperature at Nirmala Hills</h4>
+                <div class="h-28 sm:h-32 w-full"><canvas id="tempChart"></canvas></div>
+                <p class="text-4xl sm:text-5xl font-black mt-2" id="temp-display">--°C</p>
+            </div>
+
+            <div class="glass p-4 sm:p-6 flex flex-col items-center text-center">
+                <h4 class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-4">Humidity at Nirmala Hills</h4>
+                <div class="h-28 sm:h-32 w-full"><canvas id="humChart"></canvas></div>
+                <p class="text-4xl sm:text-5xl font-black mt-2" id="hum-display">--%</p>
+            </div>
+
+            <div class="glass p-4 sm:p-6 lg:col-span-2 flex flex-col justify-between bg-gradient-to-br from-blue-900/50 to-transparent border border-blue-500/30">
+                <div class="flex justify-between items-start gap-3">
+                    <div>
+                        <h4 class="text-[11px] font-black uppercase tracking-[0.2em] text-blue-400">Open-Meteo API Sync</h4>
+                        <p class="text-2xl sm:text-3xl font-bold mt-1 capitalize" id="ow-desc">Initializing Web API...</p>
+                        <p class="text-sm text-emerald-300 font-mono mt-1" id="ow-location">Zone: Muvattupuzha</p>
+                    </div>
+                    <div class="text-5xl sm:text-6xl drop-shadow-xl shrink-0" id="ow-icon">🌍</div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 sm:gap-4 mt-6 border-t border-white/10 pt-4">
+                    <div>
+                        <p class="text-[9px] sm:text-[10px] text-white/50 uppercase tracking-widest font-bold">Web Temp</p>
+                        <p class="text-xl sm:text-2xl font-black text-orange-400" id="ow-temp">--°C</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] sm:text-[10px] text-white/50 uppercase tracking-widest font-bold">Rain Chance</p>
+                        <p class="text-xl sm:text-2xl font-black text-teal-400" id="ow-precip">--%</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] sm:text-[10px] text-white/50 uppercase tracking-widest font-bold">Web Humidity</p>
+                        <p class="text-xl sm:text-2xl font-black text-blue-400" id="ow-humidity">--%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass p-4 sm:p-6" id="forecast-card">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                <h3 class="text-xs sm:text-sm font-black text-blue-400 tracking-widest uppercase">Next 6 Hours (Open-Meteo)</h3>
+                <span class="text-[9px] sm:text-[10px] font-mono bg-blue-500/20 text-blue-300 px-2 sm:px-3 py-1 rounded-full border border-blue-500/50">FORECAST</span>
+            </div>
+            <div class="grid grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3" id="forecast-strip">
+                <p class="text-xs text-white/50 col-span-6 text-center">Loading hourly outlook...</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-2">
+            <div class="glass p-4 sm:p-6 lg:col-span-2" id="graphs">
+                <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                    <h3 class="text-xs sm:text-sm font-black text-emerald-400 tracking-widest uppercase">The Flow of Time (30-Min Graph)</h3>
+                    <span class="text-[9px] sm:text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 sm:px-3 py-1 rounded-full border border-emerald-500/50">LOCAL SYNC</span>
+                </div>
+                <div class="w-full h-56 sm:h-64"><canvas id="historyChart"></canvas></div>
+            </div>
+
+            <div class="glass flex flex-col overflow-hidden min-h-[220px]" id="logs">
+                <div class="bg-black/80 px-4 sm:px-6 py-3 border-b border-white/20 flex justify-between">
+                    <span class="text-[10px] font-bold text-blue-400 tracking-widest uppercase">System_Logs</span>
+                    <span class="text-[10px] font-mono text-emerald-400 animate-pulse">_</span>
+                </div>
+                <div class="p-4 sm:p-5 font-mono text-[11px] leading-relaxed flex-1 overflow-y-auto text-blue-100/80 bg-black/40 max-h-64" id="raw-stream">
+                    >> Booting Zephyrus Predictive Engine...<br>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass p-4 sm:p-6" id="storage-card">
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-4 border-b border-white/10 pb-4">
+                <h3 class="text-xs sm:text-sm font-black text-amber-400 tracking-widest uppercase">Data &amp; Storage</h3>
+                <span class="text-[9px] sm:text-[10px] font-mono bg-amber-500/20 text-amber-300 px-2 sm:px-3 py-1 rounded-full border border-amber-500/50">🔒 PASS LOCKED</span>
+            </div>
+            <p class="text-xs text-white/60 mb-3">Logged entries stored by the automated backend every 30 minutes. Deleting the oldest ones and exporting data both require the administrator passkey.</p>
+            <div class="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+                <div id="storage-bar" class="storage-bar-inner h-3 bg-emerald-500" style="width:0%"></div>
+            </div>
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mt-3">
+                <p class="text-[11px] font-mono text-white/60"><span id="storage-count">0</span> / <span id="storage-max">5000</span> logged entries</p>
+                <button onclick="cleanOldLogs()" class="border border-red-500/50 bg-red-900/30 hover:bg-red-600/50 text-red-300 px-3 py-1.5 sm:py-1 rounded transition-colors font-bold text-[11px] cursor-pointer w-full sm:w-auto">
+                    🔒🗑 Delete Oldest Logs
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="relative overflow-hidden bg-black py-8 sm:py-12 border-t border-white/20 mt-8">
+        <div class="absolute inset-0 bg-gradient-to-r from-emerald-900/30 to-blue-900/30 opacity-80"></div>
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-center gap-4 sm:gap-6 text-center md:text-left px-4 sm:px-8">
+            <div class="bg-white p-3 rounded-2xl shadow-xl shadow-emerald-500/20">
+                <img src="logo.webp" alt="Nirmala Logo" class="h-16 sm:h-20 w-auto object-contain">
+            </div>
+            <div>
+                <h3 class="font-black text-lg sm:text-xl tracking-[0.2em] text-white uppercase mb-1">Designed & Powered By</h3>
+                <p class="font-black text-sm sm:text-lg tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-blue-400">DEPARTMENT OF PHYSICS, NIRMALA COLLEGE MUVATTUPUZHA</p>
+                <p class="text-xs text-white/70 mt-2 tracking-[0.15em] uppercase font-bold">(AUTONOMOUS)</p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import {
+            getDatabase, ref, get, remove, set, query, orderByKey, limitToFirst, onValue
+        } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js";
+
+        // IMPORTANT: Replace with your actual Firebase API Key configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCLHONONZskj2xfmom9Vt5UBSfMwpWazGc",
+            authDomain: "zephyrus-f1a79.firebaseapp.com",
+            databaseURL: "https://zephyrus-f1a79-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "zephyrus-f1a79",
+            storageBucket: "zephyrus-f1a79.firebasestorage.app",
+            messagingSenderId: "972646489913",
+            appId: "1:972646489913:web:6007af6811635b02b352e8",
+            measurementId: "G-TDTEKWQ2B9"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // --- PUSH SUBSCRIPTION LOGIC ---
+        const VAPID_PUBLIC_KEY = "BLU2tAQTYGe-L05Qhnd06ZHbwFuyih6OVcoLGrzMjAJfhJijsy9D8QRuphxyE40_CPfuwxP3w2gQtzrkRqLMx6g";
+        let messagingInstance = null;
+
+        async function registerPushSubscription() {
+            try {
+                const supported = await isSupported().catch(() => false);
+                if (!supported) {
+                    logTerminal("Push notifications not supported on this browser.");
+                    return false;
+                }
+                if (!messagingInstance) messagingInstance = getMessaging(app);
+
+                const token = await getToken(messagingInstance, { vapidKey: VAPID_PUBLIC_KEY });
+                if (!token) {
+                    logTerminal("ERR: Could not obtain an FCM token (permission likely denied).");
+                    return false;
+                }
+
+                // Clean the token for Firebase path compatibility
+                const tokenKey = token.replace(/[^a-zA-Z0-9]/g, "").slice(-64);
+                await set(ref(db, `fcm_tokens/${tokenKey}`), { token, savedAt: Date.now() });
+                logTerminal("Push token registered -- Vercel alerts are now active.");
+
+                // Show visual toast if a background alert triggers while user is looking at dashboard
+                onMessage(messagingInstance, (payload) => {
+                    const d = payload.notification || {};
+                    showToast(`Alert: ${d.title} - ${d.body}`, "success");
+                });
+
+                return true;
+            } catch (e) {
+                logTerminal("ERR: Push registration failed.");
+                console.log(e);
+                return false;
+            }
+        }
+
+        async function removePushSubscription() {
+            try {
+                if (!messagingInstance) messagingInstance = getMessaging(app);
+                const token = await getToken(messagingInstance, { vapidKey: VAPID_PUBLIC_KEY });
+                if (token) {
+                    const tokenKey = token.replace(/[^a-zA-Z0-9]/g, "").slice(-64);
+                    await remove(ref(db, `fcm_tokens/${tokenKey}`));
+                    logTerminal("Token removed from database. Alerts stopped.");
+                }
+            } catch (e) {
+                console.log("Failed to remove token.", e);
+            }
+        }
+
+        // --- GLOBAL VARIABLES & STATE ---
+        const MAX_LOG_ENTRIES = 5000;
+        let currentWmoCode = 0, precipitationProb = 0;
+        let localESP32Temp = 0, localESP32Hum = 0;
+        let globalMeteoTemp = 0, globalMeteoHum = 0, globalWindSpeed = 0;
+        let lastWeatherFxArgs = null;
+
+        // --- CHART INITIALIZATIONS ---
+        function createGauge(ctxId) {
+            return new Chart(document.getElementById(ctxId), {
+                type: 'doughnut',
+                data: { datasets: [{ data: [0, 100], backgroundColor: ['#10b981', 'rgba(255,255,255,0.05)'], borderWidth: 0, circumference: 180, rotation: 270 }] },
+                options: { cutout: '85%', maintainAspectRatio: false, plugins: { tooltip: { enabled: false } } }
+            });
+        }
+        const tempChart = createGauge('tempChart');
+        const humChart = createGauge('humChart');
+        const historyChart = new Chart(document.getElementById('historyChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ['-2hr', '-1.5hr', '-1hr', '-30m', 'Now'],
+                datasets: [
+                    { label: 'Temp (°C)', borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', data: [29, 30, 31, 31, null], fill: true, tension: 0.4 },
+                    { label: 'Humidity (%)', borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', data: [65, 60, 58, 55, null], fill: true, tension: 0.4 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: 'rgba(255,255,255,0.8)' } }, x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.8)' } } }, plugins: { legend: { labels: { color: 'white' } } } }
+        });
+
+        // --- UTILITIES ---
+        function showToast(message, type = "success") {
+            const stack = document.getElementById('toast-stack');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === "success" ? "toast-success" : "toast-error"}`;
+            toast.textContent = message;
+            stack.appendChild(toast);
+            setTimeout(() => toast.remove(), 5100);
+        }
+
+        function logTerminal(msg) {
+            const stream = document.getElementById('raw-stream');
+            if(stream) stream.innerHTML = `>> [${new Date().toLocaleTimeString()}] ${msg}<br>` + stream.innerHTML;
+        }
+
+        function getTimePeriod() {
+            const hour = new Date().getHours();
+            if (hour >= 5 && hour < 8) return "dawn";
+            if (hour >= 8 && hour < 17) return "day";
+            if (hour >= 17 && hour < 19.5) return "dusk";
+            return "night";
+        }
+
+        function getPeriodForHour(hour) {
+            if (hour >= 5 && hour < 8) return "dawn";
+            if (hour >= 8 && hour < 17) return "day";
+            if (hour >= 17 && hour < 19.5) return "dusk";
+            return "night";
+        }
+
+        // --- DATA ASSIMILATION MATH ---
+        function calculateXFinal(sensorValue, referenceValue) {
+            const variance_s = 4.0; const variance_r = 1.5;
+            const numerator = (sensorValue / variance_s) + (referenceValue / variance_r);
+            const denominator = (1 / variance_s) + (1 / variance_r);
+            return parseFloat((numerator / denominator).toFixed(2));
+        }
+
+        // --- UI & THEMES ---
+        function applyDynamicTheme(condition, windSpeed, timePeriod) {
+            const body = document.getElementById('main-body');
+            const zTitle = document.getElementById('zephyrus-title');
+            body.className = "flex flex-col min-h-screen";
+            zTitle.className = "zephyrus-title text-4xl sm:text-5xl md:text-7xl drop-shadow-2xl text-center md:text-right font-tech w-full md:w-auto";
+
+            const period = timePeriod || getTimePeriod();
+            const condLower = condition.toLowerCase();
+            const isNight = period === "night";
+
+            let family = "default";
+            if (condLower.includes("clear") || condLower.includes("sun")) {
+                family = "clear";
+                body.classList.add(`theme-clear-${period}`);
+                zTitle.classList.add(isNight ? "anim-moonlit" : "anim-sunny");
+            } else if (condLower.includes("cloud") || condLower.includes("fog")) {
+                family = "clouds";
+                body.classList.add(`theme-clouds-${period}`);
+            } else if (condLower.includes("rain") || condLower.includes("storm") || condLower.includes("thunder") || condLower.includes("drizzle")) {
+                family = "rain";
+                body.classList.add(isNight ? "theme-rain-night" : `theme-rain-${period}`);
+                zTitle.classList.add("anim-stormy");
+            } else {
+                body.classList.add("theme-default");
+            }
+
+            if (windSpeed > 15) zTitle.classList.add("anim-windy");
+            return family;
+        }
+
+        function setWeatherFx(theme, wmoCode, windSpeed, timePeriod) {
+            lastWeatherFxArgs = { theme, wmoCode, windSpeed, timePeriod };
+            const fx = document.getElementById('weather-fx');
+            if(!fx) return;
+            fx.innerHTML = "";
+            const frag = document.createDocumentFragment();
+            const isSmallScreen = window.innerWidth <= 640;
+            const densityScale = isSmallScreen ? 0.55 : 1; 
+            const period = timePeriod || getTimePeriod();
+            const isNight = period === "night";
+            const isDusk = period === "dusk";
+
+            if (isNight && theme !== "rain") {
+                const starCount = Math.round((isSmallScreen ? 40 : 70) * densityScale);
+                for (let i = 0; i < starCount; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    const size = 1 + Math.random() * 1.6;
+                    star.style.width = size + 'px';
+                    star.style.height = size + 'px';
+                    star.style.top = Math.random() * 65 + 'vh';
+                    star.style.left = Math.random() * 100 + 'vw';
+                    star.style.animationDuration = (2 + Math.random() * 3) + 's';
+                    star.style.animationDelay = (Math.random() * 4) + 's';
+                    frag.appendChild(star);
+                }
+            }
+
+            if (theme === "rain" || wmoCode >= 51) {
+                const dropCount = Math.round((wmoCode >= 95 ? 55 : 35) * densityScale);
+                const dropHeight = isSmallScreen ? 38 : 55;
+                for (let i = 0; i < dropCount; i++) {
+                    const drop = document.createElement('div');
+                    drop.className = 'rain-drop';
+                    drop.style.left = Math.random() * 100 + 'vw';
+                    drop.style.height = dropHeight + 'px';
+                    drop.style.animationDuration = (0.6 + Math.random() * 0.6) + 's';
+                    drop.style.animationDelay = (Math.random() * 2) + 's';
+                    frag.appendChild(drop);
+                }
+                if (wmoCode >= 95) {
+                    const flash = document.createElement('div');
+                    flash.className = 'lightning-overlay';
+                    frag.appendChild(flash);
+                }
+            } else if (theme === "clear") {
+                if (isNight) {
+                    const halo = document.createElement('div');
+                    halo.className = 'moon-halo';
+                    frag.appendChild(halo);
+                    const moon = document.createElement('div');
+                    moon.className = 'moon-disc';
+                    frag.appendChild(moon);
+                } else {
+                    const rays = document.createElement('div');
+                    rays.className = 'sun-rays'; 
+                    if (isDusk) rays.style.opacity = '0.55';
+                    frag.appendChild(rays);
+                }
+            } else if (theme === "clouds") {
+                const baseWispCount = (wmoCode === 45 || wmoCode === 48) ? 6 : 4;
+                const wispCount = Math.max(2, Math.round(baseWispCount * densityScale));
+                const wispWidthRange = isSmallScreen ? [110, 200] : [200, 400];
+                for (let i = 0; i < wispCount; i++) {
+                    const wisp = document.createElement('div');
+                    wisp.className = 'fog-wisp';
+                    wisp.style.top = (10 + Math.random() * 80) + 'vh';
+                    wisp.style.left = (Math.random() * 60) + 'vw';
+                    wisp.style.width = (wispWidthRange[0] + Math.random() * (wispWidthRange[1] - wispWidthRange[0])) + 'px';
+                    wisp.style.animationDuration = (14 + Math.random() * 10) + 's';
+                    wisp.style.animationDelay = (Math.random() * 4) + 's';
+                    frag.appendChild(wisp);
+                }
+            }
+
+            if (windSpeed > 15) {
+                const lineCount = Math.max(3, Math.round(8 * densityScale));
+                const lineWidthRange = isSmallScreen ? [35, 70] : [60, 160];
+                for (let i = 0; i < lineCount; i++) {
+                    const line = document.createElement('div');
+                    line.className = 'wind-line';
+                    line.style.top = Math.random() * 90 + 'vh';
+                    line.style.width = (lineWidthRange[0] + Math.random() * (lineWidthRange[1] - lineWidthRange[0])) + 'px';
+                    line.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    line.style.animationDelay = (Math.random() * 2) + 's';
+                    frag.appendChild(line);
+                }
+            }
+            fx.appendChild(frag);
+        }
+
+        function wmoToDescription(code, timePeriod) {
+            const period = timePeriod || getTimePeriod();
+            if (code === 0) {
+                if (period === "dawn") return { desc: "Sunrise", icon: "🌅", theme: "clear" };
+                if (period === "dusk") return { desc: "Sunset", icon: "🌇", theme: "clear" };
+                if (period === "night") return { desc: "Clear Night", icon: "🌙", theme: "clear" };
+                return { desc: "Clear Sky", icon: "☀️", theme: "clear" };
+            }
+            if (code === 1 || code === 2 || code === 3) {
+                if (period === "night") return { desc: "Clear with Clouds", icon: "☁️", theme: "clouds" };
+                return { desc: "Partly Cloudy", icon: "⛅", theme: "clouds" };
+            }
+            if (code === 45 || code === 48) {
+                return { desc: "Foggy", icon: "🌫️", theme: "clouds" };
+            }
+            if (code >= 51 && code <= 99) {
+                if (code >= 95) return { desc: "Thunderstorm", icon: "⛈️", theme: "rain" };
+                return { desc: "Rain/Storm", icon: "☔", theme: "rain" };
+            }
+            return { desc: "Stable", icon: period === "night" ? "🌙" : "🌤️", theme: "clear" };
+        }
+
+        function updatePredictiveCore() {
+            if (localESP32Temp === 0 || globalMeteoTemp === 0) return;
+            const optimizedResult = calculateXFinal(localESP32Temp, globalMeteoTemp);
+            
+            const msgBox = document.getElementById('warning-msg');
+            const emojiBox = document.getElementById('warning-emoji');
+            const panel = document.getElementById('intel-warning');
+
+            let alertTitle = "";
+            let category = "optimal";
+            if (currentWmoCode >= 95) category = "thunderstorm";
+            else if (currentWmoCode >= 51) category = "rain";
+            else if (localESP32Temp >= 35) category = "heat";
+            else if (globalWindSpeed > 15) category = "windy";
+            else category = getTimePeriod() === "night" ? "optimalNight" : "optimal";
+
+            if (category === "thunderstorm") { emojiBox.innerText = "⛈️"; panel.style.borderColor = "#a855f7"; panel.style.background = "linear-gradient(to right, rgba(168, 85, 247, 0.3), transparent)"; }
+            else if (category === "rain") { emojiBox.innerText = "☔"; panel.style.borderColor = "#3b82f6"; panel.style.background = "linear-gradient(to right, rgba(59, 130, 246, 0.3), transparent)"; }
+            else if (category === "heat") { emojiBox.innerText = "🔥"; panel.style.borderColor = "#ef4444"; panel.style.background = "linear-gradient(to right, rgba(239, 68, 68, 0.3), transparent)"; }
+            else if (category === "windy") { emojiBox.innerText = "🌬️"; panel.style.borderColor = "#38bdf8"; panel.style.background = "linear-gradient(to right, rgba(56, 189, 248, 0.3), transparent)"; }
+            else { 
+                const nightNow = getTimePeriod() === "night";
+                emojiBox.innerText = nightNow ? "🌙" : "☀️"; 
+                panel.style.borderColor = "#10b981"; 
+                panel.style.background = "linear-gradient(to right, rgba(16, 185, 129, 0.3), transparent)"; 
+            }
+            
+            // 1. Generate a contextual default greeting
+            const currentHour = new Date().getHours();
+            let generalGreeting = "Atmosphere stable. Observing the link, grasping the whole.";
+
+            if (currentHour >= 5 && currentHour < 12) {
+                generalGreeting = "Good Morning. Telemetry active and stable.";
+            } else if (currentHour >= 12 && currentHour < 17) {
+                generalGreeting = "Good Afternoon. Monitoring environmental parameters.";
+            } else if (currentHour >= 17 && currentHour < 22) {
+                generalGreeting = "Good Evening. Night cycle monitoring engaged.";
+            }
+
+            // 2. Update the alert banner
+            msgBox.innerText = `Calibrated Output: ${optimizedResult}°C. | ${generalGreeting}`;
+        }
+
+        // --- OPEN-METEO FETCH (For UI display only) ---
+        async function fetchForecast() {
+            try {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=9.982&longitude=76.591&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability&timezone=auto`;
+                const res = await fetch(url);
+                const d = await res.json();
+
+                globalMeteoTemp = d.current.temperature_2m;
+                globalMeteoHum = d.current.relative_humidity_2m;
+                globalWindSpeed = d.current.wind_speed_10m;
+                currentWmoCode = d.current.weather_code;
+                precipitationProb = d.hourly.precipitation_probability[new Date().getHours()];
+
+                const nowPeriod = getTimePeriod();
+                const weatherInfo = wmoToDescription(currentWmoCode, nowPeriod);
+                document.getElementById('ow-desc').innerText = weatherInfo.desc;
+                document.getElementById('ow-precip').innerText = precipitationProb + "%";
+                document.getElementById('ow-humidity').innerText = globalMeteoHum + "%";
+                document.getElementById('ow-icon').innerText = weatherInfo.icon;
+                document.getElementById('ow-temp').innerText = globalMeteoTemp + "°C";
+                document.getElementById('meteo-data').innerText = `Meteo Temp: ${globalMeteoTemp} °C | Hum: ${globalMeteoHum} %`;
+
+                applyDynamicTheme(weatherInfo.theme, globalWindSpeed, nowPeriod);
+                setWeatherFx(weatherInfo.theme, currentWmoCode, globalWindSpeed, nowPeriod);
+
+                // Render Strip
+                let cells = "";
+                const hourlyTimes = d.hourly.time;
+                const hourlyCodes = d.hourly.weather_code;
+                const hourlyTemps = d.hourly.temperature_2m;
+                const hourlyPrecip = d.hourly.precipitation_probability;
+                const nowHourIdx = new Date().getHours();
+                for (let i = 0; i < 6; i++) {
+                    const idx = nowHourIdx + i;
+                    if (idx >= hourlyTimes.length) break;
+                    const dateObj = new Date(hourlyTimes[idx]);
+                    const info = wmoToDescription(hourlyCodes[idx], getPeriodForHour(dateObj.getHours()));
+                    const label = i === 0 ? "Now" : dateObj.toLocaleTimeString([], { hour: 'numeric' });
+                    cells += `
+                        <div class="forecast-cell flex flex-col items-center bg-white/5 rounded-xl py-3">
+                            <p class="text-[10px] font-bold text-white/60 uppercase">${label}</p>
+                            <p class="text-2xl my-1">${info.icon}</p>
+                            <p class="text-sm font-black">${Math.round(hourlyTemps[idx])}°C</p>
+                            <p class="text-[9px] text-teal-300 font-mono">${hourlyPrecip[idx] ?? 0}%</p>
+                        </div>`;
+                }
+                document.getElementById('forecast-strip').innerHTML = cells;
+                logTerminal(`Open-Meteo API Sync complete. Cloud Data integrated.`);
+                updatePredictiveCore();
+            } catch (e) { logTerminal("ERR: Open-Meteo unreachable."); }
+        }
+
+        // --- REAL-TIME FIREBASE LISTENERS ---
+        onValue(ref(db, 'parameters'), (snap) => {
+            if (snap.exists()) {
+                const { temperature: t, humidity: h } = snap.val();
+                localESP32Temp = t; localESP32Hum = h;
+                
+                document.getElementById('temp-display').innerText = t + "°C";
+                document.getElementById('hum-display').innerText = h + "%";
+                document.getElementById('esp-data').innerText = `ESP32 Temp: ${t} °C | Hum: ${h} %`;
+                document.getElementById('current-time').innerText = new Date().toLocaleTimeString();
+
+                tempChart.data.datasets[0].backgroundColor[0] = t > 35 ? '#ef4444' : (t > 28 ? '#f59e0b' : '#10b981');
+                tempChart.data.datasets[0].data = [t, 100-t]; tempChart.update();
+                humChart.data.datasets[0].data = [h, 100-h]; humChart.update();
+
+                historyChart.data.datasets[0].data[4] = t;
+                historyChart.data.datasets[1].data[4] = h;
+                historyChart.update();
+
+                logTerminal(`Hardware Telemetry Pulled: ${t}°C | ${h}%`);
+                updatePredictiveCore();
+            }
+        });
+
+        // Passive listener for the heartbeat
+        onValue(ref(db, 'admin_acess/last_seen'), (snap) => {
+            const dot = document.getElementById('esp-heartbeat-dot');
+            const label = document.getElementById('esp-heartbeat');
+            const text = document.getElementById('esp-heartbeat-text');
+            if (snap.exists()) {
+                const lastSeen = Number(snap.val()) || 0;
+                const isFresh = (Date.now() - lastSeen) < (21 * 60 * 1000); // 20 min tolerance
+                if (isFresh) {
+                    dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                    label.className = "flex items-center gap-1.5 text-emerald-400";
+                    text.textContent = "ESP32: ONLINE";
+                } else {
+                    dot.className = "w-2 h-2 rounded-full bg-red-400";
+                    label.className = "flex items-center gap-1.5 text-red-400";
+                    text.textContent = "ESP32: OFFLINE";
+                }
+            }
+        });
+
+        // Passive listener to monitor background syncs
+        onValue(ref(db, 'admin_acess/log_monit'), (snapshot) => {
+            let count = 0;
+            let lastKey = null;
+            if (snapshot.exists()) {
+                snapshot.forEach((child) => { count++; lastKey = child.key; });
+                
+                // Update UI based on logs
+                document.getElementById('storage-count').innerText = count;
+                const pct = Math.min(100, Math.round((count / MAX_LOG_ENTRIES) * 100));
+                const bar = document.getElementById('storage-bar');
+                bar.style.width = pct + "%";
+                bar.className = "storage-bar-inner h-3 " + (pct >= 90 ? "bg-red-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500");
+
+                // Get timestamp from last log to show sync status
+                if (lastKey) {
+                    const lastLog = snapshot.child(lastKey).val();
+                    const ts = Array.isArray(lastLog) ? lastLog[0] : lastLog.timestamp;
+                    document.getElementById('last-update').innerText = `Last Backend Sync: ${new Date(ts).toLocaleString()}`;
+                    document.getElementById('sync-status').innerText = `Status: Logged successfully at ${new Date(ts).toLocaleTimeString()}`;
+                }
+            }
+        });
+
+        // --- EXPORT & ADMIN FUNCTIONS ---
+        function askPasskey(promptText) {
+            const passkey = prompt(promptText);
+            if (passkey === "NCMZPY") return true;
+            if (passkey !== null) {
+                alert("ACCESS DENIED: Invalid Passkey.");
+                logTerminal("ERR: Unauthorized access attempt.");
+            }
+            return false;
+        }
+
+        window.secureDataExport = async function() {
+            if (!askPasskey("Enter Administrator Passkey to export data:")) return;
+            logTerminal("Passkey Accepted. Compiling dataset from Firebase...");
+            let csvContent = "data:text/csv;charset=utf-8,Date,Time,ESP_Temp,ESP_Humidity,OpenMeteo_Temp,OpenMeteo_Humidity,Optimized_X_Final\n";
+            try {
+                const snapshot = await get(ref(db, 'admin_acess/log_monit'));
+                if (snapshot.exists()) {
+                    snapshot.forEach((child) => {
+                        const data = child.val();
+                        let ts, hTemp, hHum, mTemp, mHum;
+                        if (Array.isArray(data)) {
+                            [ts, hTemp, hHum, mTemp, mHum] = data;
+                        } else {
+                            ts = data.timestamp; hTemp = data.hardware_temp; hHum = data.hardware_hum;
+                            mTemp = data.meteo_temp; mHum = data.meteo_hum;
+                        }
+                        if (ts && hTemp !== undefined) {
+                            const dateObj = new Date(ts);
+                            const finalTemp = calculateXFinal(hTemp, mTemp);
+                            csvContent += `${dateObj.toLocaleDateString()},${dateObj.toLocaleTimeString()},${hTemp},${hHum ?? ""},${mTemp},${mHum},${finalTemp}\n`;
+                        }
+                    });
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", "Zephyrus_Dataset.csv");
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    logTerminal("Export complete.");
+                } else {
+                    alert("No logs found in Firebase yet.");
+                }
+            } catch (error) { logTerminal("ERR: Export failed."); }
+        };
+
+        const confirmOverlay = document.getElementById('confirm-modal-overlay');
+        const confirmYesBtn = document.getElementById('confirm-modal-yes');
+        const confirmNoBtn = document.getElementById('confirm-modal-no');
+        function showConfirmModal() {
+            confirmOverlay.classList.add('visible');
+            return new Promise((resolve) => {
+                const cleanup = (result) => {
+                    confirmOverlay.classList.remove('visible');
+                    confirmYesBtn.removeEventListener('click', onYes);
+                    confirmNoBtn.removeEventListener('click', onNo);
+                    resolve(result);
+                };
+                const onYes = () => cleanup(true);
+                const onNo = () => cleanup(false);
+                confirmYesBtn.addEventListener('click', onYes);
+                confirmNoBtn.addEventListener('click', onNo);
+            });
+        }
+
+        window.cleanOldLogs = async function() {
+            if (!askPasskey("Enter Administrator Passkey to delete oldest logs:")) return;
+            const confirmed = await showConfirmModal();
+            if (!confirmed) { logTerminal("Deletion cancelled."); return; }
+            try {
+                const oldestQuery = query(ref(db, 'admin_acess/log_monit'), orderByKey(), limitToFirst(100));
+                const snapshot = await get(oldestQuery);
+                if (!snapshot.exists()) { showToast("Storage empty.", "success"); return; }
+                const keys = []; snapshot.forEach((child) => keys.push(child.key));
+                const results = await Promise.allSettled(keys.map((key) => remove(ref(db, `admin_acess/log_monit/${key}`))));
+                logTerminal(`Storage sweep: Removed oldest entries from Firebase.`);
+                showToast("Sweep successful.", "success");
+            } catch (e) { logTerminal("ERR: Deletion failed."); }
+        };
+
+        // --- NOTIFICATIONS PERMISSIONS UI ---
+        const notifToggle = document.getElementById('notif-toggle');
+        const notifModal = document.getElementById('notif-modal-overlay');
+        let modalDismissed = false;
+
+        // Register Service Worker for Background Notification Handling
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('firebase-messaging-sw.js')
+                .then((reg) => logTerminal("Service worker registered -- active for background alerts."))
+                .catch(() => {});
+        }
+
+        function syncNotifToggleWithPermission() {
+            notifToggle.checked = (Notification.permission === "granted");
+        }
+        syncNotifToggleWithPermission();
+
+        function maybeShowNotifPopup() {
+            if (!modalDismissed && Notification.permission === "default") notifModal.classList.add('visible');
+        }
+        
+        // Corrected typo from 'wwindow' to 'window'
+        window.enableNotifications = function() {
+            modalDismissed = true;
+            notifModal.classList.remove('visible');
+
+            if (!("Notification" in window)) {
+                logTerminal("ERR: Notifications are not supported by this browser.");
+                showToast("Push not supported here.", "error");
+                return;
+            }
+
+            Notification.requestPermission().then(async (perm) => {
+                if (perm === "granted") {
+                    notifToggle.checked = true;
+                    showToast("Alerts enabled.", "success");
+                    await registerPushSubscription();
+                } else {
+                    notifToggle.checked = false;
+                    logTerminal("Notification permission denied by user.");
+                }
+            }).catch(err => {
+                logTerminal("ERR: Permission request failed or was blocked.");
+                console.error(err);
+            });
+        };
+        
+        window.dismissModal = function() {
+            modalDismissed = true;
+            notifModal.classList.remove('visible');
+            notifToggle.checked = false;
+        };
+        
+        // Upgraded toggle logic to allow turning alerts OFF by removing the token from the database
+        notifToggle.addEventListener('change', async (e) => {
+            if (e.target.checked) {
+                if (Notification.permission === "granted") {
+                    showToast("Alerts re-enabled.", "success");
+                    await registerPushSubscription();
+                } else if (Notification.permission !== "denied") {
+                    Notification.requestPermission().then(async (perm) => {
+                        notifToggle.checked = (perm === "granted");
+                        if (perm === "granted") {
+                            showToast("Alerts enabled.", "success");
+                            await registerPushSubscription();
+                        }
+                    });
+                } else {
+                    e.target.checked = false;
+                    showToast("Notifications blocked in browser settings.", "error");
+                }
+            } else {
+                // If toggled off, we must remove the token so the Vercel backend stops messaging this device
+                await removePushSubscription();
+                showToast("Alerts disabled.", "success");
+            }
+        });
+
+        // Initialize UI Elements
+        window.addEventListener('load', () => setTimeout(maybeShowNotifPopup, 600));
+        let resizeDebounce;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeDebounce);
+            resizeDebounce = setTimeout(() => {
+                if (lastWeatherFxArgs) setWeatherFx(lastWeatherFxArgs.theme, lastWeatherFxArgs.wmoCode, lastWeatherFxArgs.windSpeed, lastWeatherFxArgs.timePeriod);
+            }, 300);
+        });
+
+        fetchForecast();
+        setInterval(fetchForecast, 30 * 60 * 1000); 
+
+    </script>
+</body>
+</html>
