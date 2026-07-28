@@ -146,6 +146,26 @@
         @keyframes modal-pop { from { opacity: 0; transform: scale(0.92) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         .modal-in { animation: modal-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 
+        #passkey-modal-overlay { position: fixed; inset: 0; z-index: 215; display: none; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.78); backdrop-filter: blur(4px); }
+        #passkey-modal-overlay.visible { display: flex; }
+        #passkey-input {
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+        #passkey-input:focus { box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.18); }
+        @keyframes passkey-shake {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+        .passkey-shake { animation: passkey-shake 0.45s cubic-bezier(.36,.07,.19,.97); }
+        @keyframes passkey-error-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        #passkey-error.visible { display: block; animation: passkey-error-in 0.25s ease; }
+        @keyframes passkey-spin { to { transform: rotate(360deg); } }
+        .passkey-spinner { display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.25); border-top-color: #fbbf24; animation: passkey-spin 0.7s linear infinite; }
+
         #toast-stack { position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 220; display: flex; flex-direction: column; gap: 0.6rem; max-width: 320px; }
         .toast { padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 12px; line-height: 1.4; backdrop-filter: blur(10px);
             box-shadow: 0 8px 24px rgba(0,0,0,0.45); animation: toast-in 0.35s ease, toast-out 0.4s ease 4.6s forwards; }
@@ -201,6 +221,22 @@
             <div class="flex gap-3 justify-center flex-wrap">
                 <button id="confirm-modal-yes" class="bg-red-600 hover:bg-red-500 px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors">Yes, Delete Forever</button>
                 <button id="confirm-modal-no" class="bg-white/10 hover:bg-white/20 px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="passkey-modal-overlay">
+        <div class="glass modal-in max-w-sm w-[90%] p-6 sm:p-8 text-center border border-amber-500/40" id="passkey-modal-box">
+            <div class="text-4xl mb-3">🔐</div>
+            <h3 class="text-base font-black uppercase tracking-widest text-amber-400 mb-2" id="passkey-modal-title">Administrator Access</h3>
+            <p class="text-xs text-white/60 mb-5 leading-relaxed" id="passkey-modal-body">Enter the administrator passkey to continue.</p>
+            <input type="password" id="passkey-input" autocomplete="off"
+                class="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2.5 text-sm text-white text-center font-mono tracking-[0.3em] mb-2 focus:outline-none focus:border-amber-400/70 placeholder:tracking-normal placeholder:text-white/30"
+                placeholder="Passkey">
+            <p id="passkey-error" class="text-red-400 text-[11px] font-semibold mb-2" style="display:none;">Access denied — invalid passkey.</p>
+            <div class="flex gap-3 justify-center mt-4">
+                <button id="passkey-submit" class="bg-amber-600 hover:bg-amber-500 px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors min-w-[104px]">Authenticate</button>
+                <button id="passkey-cancel" class="bg-white/10 hover:bg-white/20 px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors">Cancel</button>
             </div>
         </div>
     </div>
@@ -408,7 +444,7 @@
 
                 // Clean the token for Firebase path compatibility
                 const tokenKey = token.replace(/[^a-zA-Z0-9]/g, "").slice(-64);
-                await set(ref(db, `fcm_tokens/${tokenKey}`), { token, savedAt: Date.now() });
+                await set(ref(db, `tokens/${tokenKey}`), { token, savedAt: Date.now() });
                 logTerminal("Push token registered -- Vercel alerts are now active.");
 
                 // Show visual toast if a background alert triggers while user is looking at dashboard
@@ -431,7 +467,7 @@
                 const token = await getToken(messagingInstance, { vapidKey: VAPID_PUBLIC_KEY });
                 if (token) {
                     const tokenKey = token.replace(/[^a-zA-Z0-9]/g, "").slice(-64);
-                    await remove(ref(db, `fcm_tokens/${tokenKey}`));
+                    await remove(ref(db, `tokens/${tokenKey}`));
                     logTerminal("Token removed from database. Alerts stopped.");
                 }
             } catch (e) {
@@ -814,18 +850,74 @@
         });
 
         // --- EXPORT & ADMIN FUNCTIONS ---
-        function askPasskey(promptText) {
-            const passkey = prompt(promptText);
-            if (passkey === "NCMZPY") return true;
-            if (passkey !== null) {
-                alert("ACCESS DENIED: Invalid Passkey.");
-                logTerminal("ERR: Unauthorized access attempt.");
-            }
-            return false;
+        const passkeyOverlay = document.getElementById('passkey-modal-overlay');
+        const passkeyBox = document.getElementById('passkey-modal-box');
+        const passkeyInput = document.getElementById('passkey-input');
+        const passkeyError = document.getElementById('passkey-error');
+        const passkeySubmitBtn = document.getElementById('passkey-submit');
+        const passkeyCancelBtn = document.getElementById('passkey-cancel');
+        const passkeyBodyText = document.getElementById('passkey-modal-body');
+
+        function askPasskeyModal(promptText) {
+            passkeyBodyText.textContent = promptText;
+            passkeyInput.value = "";
+            passkeyError.style.display = "none";
+            passkeySubmitBtn.disabled = false;
+            passkeySubmitBtn.innerHTML = "Authenticate";
+            passkeyOverlay.classList.add('visible');
+            setTimeout(() => passkeyInput.focus(), 120);
+
+            return new Promise((resolve) => {
+                const cleanup = (result) => {
+                    passkeyOverlay.classList.remove('visible');
+                    passkeySubmitBtn.removeEventListener('click', onSubmit);
+                    passkeyCancelBtn.removeEventListener('click', onCancel);
+                    passkeyInput.removeEventListener('keydown', onKeydown);
+                    resolve(result);
+                };
+
+                const onSubmit = () => {
+                    const value = passkeyInput.value.trim();
+                    if (!value) { triggerShake(); return; }
+
+                    passkeySubmitBtn.disabled = true;
+                    passkeySubmitBtn.innerHTML = '<span class="passkey-spinner"></span>';
+
+                    // Tiny deliberate delay makes the check feel like a real verification pass
+                    setTimeout(() => {
+                        if (value === "NCMZPY") {
+                            cleanup(true);
+                        } else {
+                            passkeySubmitBtn.disabled = false;
+                            passkeySubmitBtn.innerHTML = "Authenticate";
+                            passkeyError.style.display = "block";
+                            passkeyError.classList.remove('visible'); void passkeyError.offsetWidth; passkeyError.classList.add('visible');
+                            triggerShake();
+                            passkeyInput.value = "";
+                            passkeyInput.focus();
+                            logTerminal("ERR: Unauthorized access attempt.");
+                        }
+                    }, 380);
+                };
+
+                const onCancel = () => cleanup(false);
+                const onKeydown = (e) => {
+                    if (e.key === "Enter") onSubmit();
+                    if (e.key === "Escape") onCancel();
+                };
+
+                function triggerShake() {
+                    passkeyBox.classList.remove('passkey-shake'); void passkeyBox.offsetWidth; passkeyBox.classList.add('passkey-shake');
+                }
+
+                passkeySubmitBtn.addEventListener('click', onSubmit);
+                passkeyCancelBtn.addEventListener('click', onCancel);
+                passkeyInput.addEventListener('keydown', onKeydown);
+            });
         }
 
         window.secureDataExport = async function() {
-            if (!askPasskey("Enter Administrator Passkey to export data:")) return;
+            if (!(await askPasskeyModal("Enter the administrator passkey to export the full telemetry dataset."))) return;
             logTerminal("Passkey Accepted. Compiling dataset from Firebase...");
             let csvContent = "data:text/csv;charset=utf-8,Date,Time,ESP_Temp,ESP_Humidity,OpenMeteo_Temp,OpenMeteo_Humidity,Optimized_X_Final\n";
             try {
@@ -880,17 +972,37 @@
         }
 
         window.cleanOldLogs = async function() {
-            if (!askPasskey("Enter Administrator Passkey to delete oldest logs:")) return;
+            if (!(await askPasskeyModal("Enter the administrator passkey to purge stored log entries."))) return;
+
+            // Determine scope first so the confirmation dialog can be accurate
+            let totalCount = 0;
+            try {
+                const fullSnap = await get(ref(db, 'admin_acess/log_monit'));
+                if (!fullSnap.exists()) { showToast("Storage empty.", "success"); return; }
+                fullSnap.forEach(() => { totalCount++; });
+            } catch (e) { logTerminal("ERR: Could not read log count."); return; }
+
+            const willDeleteAll = totalCount <= 100;
+            document.getElementById('confirm-modal-body').textContent = willDeleteAll
+                ? `Only ${totalCount} entries are stored — this will permanently remove all of them from Firebase. This action cannot be undone.`
+                : `This will permanently remove the oldest 100 of ${totalCount} entries from Firebase. This action cannot be undone.`;
+
             const confirmed = await showConfirmModal();
             if (!confirmed) { logTerminal("Deletion cancelled."); return; }
+
             try {
-                const oldestQuery = query(ref(db, 'admin_acess/log_monit'), orderByKey(), limitToFirst(100));
-                const snapshot = await get(oldestQuery);
-                if (!snapshot.exists()) { showToast("Storage empty.", "success"); return; }
-                const keys = []; snapshot.forEach((child) => keys.push(child.key));
-                const results = await Promise.allSettled(keys.map((key) => remove(ref(db, `admin_acess/log_monit/${key}`))));
-                logTerminal(`Storage sweep: Removed oldest entries from Firebase.`);
-                showToast("Sweep successful.", "success");
+                if (willDeleteAll) {
+                    await remove(ref(db, 'admin_acess/log_monit'));
+                    logTerminal(`Storage sweep: Removed all ${totalCount} entries (below the 100-entry threshold).`);
+                    showToast(`All ${totalCount} entries cleared.`, "success");
+                } else {
+                    const oldestQuery = query(ref(db, 'admin_acess/log_monit'), orderByKey(), limitToFirst(100));
+                    const snapshot = await get(oldestQuery);
+                    const keys = []; snapshot.forEach((child) => keys.push(child.key));
+                    await Promise.allSettled(keys.map((key) => remove(ref(db, `admin_acess/log_monit/${key}`))));
+                    logTerminal(`Storage sweep: Removed oldest 100 entries from Firebase.`);
+                    showToast("Oldest 100 entries cleared.", "success");
+                }
             } catch (e) { logTerminal("ERR: Deletion failed."); }
         };
 
