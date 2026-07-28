@@ -113,6 +113,22 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // ==========================================
+    // QUIET HOURS LOGIC (9 PM - 6 AM IST)
+    // ==========================================
+    const now = new Date();
+    const localString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+    const localDate = new Date(localString);
+    const currentHour = localDate.getHours();
+
+    if (currentHour >= 21 || currentHour < 6) {
+        console.log("Quiet hours active. Skipping execution.");
+        return res.status(200).json({ 
+            message: "Quiet hours active (9 PM - 6 AM). Notifications skipped." 
+        });
+    }
+    // ==========================================
+
     try {
         // Fetch Open-Meteo Data
         const meteoUrl = 'https://api.open-meteo.com/v1/forecast?latitude=9.982&longitude=76.591&current=temperature_2m,weather_code,wind_speed_10m&timezone=auto';
@@ -122,10 +138,9 @@ export default async function handler(req, res) {
         // Fetch Hardware Telemetry
         const paramSnapshot = await db.ref('parameters').once('value');
         const hardwareData = paramSnapshot.exists() ? paramSnapshot.val() : { temperature: meteoData.temperature_2m };
-
-        const currentHour = new Date().getHours();
         
         // Generate the message (tries AI first, uses fallback if needed)
+        // Passes the correctly calculated IST 'currentHour' to the functions
         const messagePayload = await getDynamicWeatherMessage(hardwareData.temperature, meteoData, currentHour);
 
         // Retrieve all registered FCM tokens
