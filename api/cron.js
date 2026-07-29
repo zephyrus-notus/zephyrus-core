@@ -182,20 +182,17 @@ export default async function handler(req, res) {
 
         // ==========================================
         // Construct the push notification with branding options
-        // UPDATED: PNG logo + cache-busting ?v=2
+        // UPDATED: zephyrus-logo.png + cache-busting ?v=4
         // ==========================================
         const fcmMessage = {
             notification: {
-                title: `Zephyrus: ${messagePayload.title}`, // Prepends Zephyrus name
+                title: `Zephyrus: ${messagePayload.title}`, 
                 body: messagePayload.body
             },
             webpush: {
                 notification: {
-                    // Actual URL of your hosted PNG Z-Wave logo with cache-busting
-                    icon: "https://zephyrus-core.vercel.app/logo.png?v=2", 
-                    
-                    // Optional: A 'badge' is a simple monochrome icon (Android only)
-                    // badge: "https://zephyrus-core.vercel.app/badge.png"
+                    // This now perfectly matches your file tree screenshot
+                    icon: "https://zephyrus-core.vercel.app/zephyrus-logo.png?v=4" 
                 }
             },
             tokens: tokens
