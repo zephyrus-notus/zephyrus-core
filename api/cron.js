@@ -17,64 +17,59 @@ if (!admin.apps.length) {
 const db = admin.database();
 const messaging = admin.messaging();
 
-// 2. Initialize Gemini API Client
+// 2. Initialize Gemini API Client (Automatically picks up process.env.GEMINI_API_KEY)
 const ai = new GoogleGenAI({});
 
-// Base URL for notification branding and click actions
-const APP_DOMAIN = process.env.VERCEL_URL 
-  ? `https://${process.env.VERCEL_URL}` 
-  : 'https://zephyrus-core.vercel.app';
-
-// 3. Robust Fallback Generator
+// 3. Robust Fallback Generator (Infused with physics sarcasm, literature, and wit)
 function getFallbackWeatherMessage(hardwareTemp, meteoData, currentHour) {
     const wmoCode = meteoData.weather_code;
     const windSpeed = meteoData.wind_speed_10m;
     const isNight = currentHour >= 19 || currentHour < 5;
     const isMorning = currentHour >= 5 && currentHour < 12;
 
-    let title = "Zephyrus Weather Update";
+    let title = "Zephyrus Core";
     let body = "";
 
     if (wmoCode >= 95) {
-        title = "Zephyrus | Storm Watch ⚡";
-        body = "Thunder's rolling over the hills tonight 🌩️ — stay indoors and keep devices unplugged.";
+        title = "Maxwell's equations are crying! ⚡";
+        body = "Entropy is throwing an absolute party in the atmosphere. Unplug your sensitive electronics, stay indoors, and enjoy the cosmic light show safely. ⛈️";
     } else if (wmoCode >= 51 && wmoCode <= 65) {
-        title = isMorning ? "Zephyrus | Rainy Start ☔" : "Zephyrus | Gentle Showers 🌧️";
-        body = "Rain is tapping softly on the campus roof today — keep an umbrella close and stay dry.";
+        title = isMorning ? "The sky chose drama today! ☔" : "Existential puddle season has begun. 🌧️";
+        body = "Don't let the atmospheric condensation ruin your mood. Grab your umbrella, navigate the terrain like a physicist avoiding friction, and maybe find a hot tea. ☕";
     } else if (hardwareTemp >= 35) {
-        title = "Zephyrus | Heat Advisory 🔥";
-        body = `It's a warm one today at ${hardwareTemp}°C — stay hydrated and find some shade. 💧`;
+        title = "Thermodynamics is personally attacking us. 🔥";
+        body = `Whew, it's hitting ${hardwareTemp}°C! Molecular kinetic energy is entirely off the charts. Find some shade, hydrate aggressively, and take it easy out there. 💧`;
     } else if (windSpeed > 15) {
-        title = "Zephyrus | Windy Skies 🌬️";
-        body = "A brisk breeze is sweeping through campus — hold onto your hats and loose papers.";
+        title = "Momentum transfer is getting out of hand! 🌬️";
+        body = "Hold onto your hats and loose papers. The atmosphere has chosen pure chaos today—secure your gear before it achieves escape velocity.";
     } else if (wmoCode === 0 || wmoCode <= 3) {
         if (isMorning) {
-            title = "Zephyrus | Clear Morning 🌅";
-            body = "A beautifully clear sky greets Nirmala College this morning — enjoy the sunshine ☀️.";
+            title = "A crisp quantum sunrise! 🌅";
+            body = "The universe decided to render a clear sky this morning. Leave the umbrella behind, step outside, and let reality unfold nicely.";
         } else if (isNight) {
-            title = "Zephyrus | Quiet Night 🌌";
-            body = "The stars are out in full tonight — a calm, peaceful evening across campus.";
+            title = "The stars are conspiring in silence. 🌌";
+            body = "Observe the link, grasp the whole. The local spacetime continuum is completely peaceful. Have a quiet, low-entropy night.";
         } else {
-            title = "Zephyrus | Clear Skies 🌤️";
-            body = "Blue skies all around today — a lovely afternoon to step outside for a bit.";
+            title = "Reality is looking surprisingly pristine. 🌤️";
+            body = "No clouds, no drama—just a clean gradient of blue. Take a deep breath and enjoy the clear telemetry outside.";
         }
     } else {
-        title = "Zephyrus | All Clear 🍃";
-        body = "Conditions are calm and steady on campus — have a pleasant day ahead.";
+        title = "System nominal. 🍃";
+        body = "Monitoring environmental parameters. Everything is flowing exactly as the equations intended.";
     }
 
     return { title, body };
 }
 
-// 4. Dynamic AI Generation
+// 4. Dynamic AI Generation (With sarcastic physics and poetic depth)
 async function getDynamicWeatherMessage(hardwareTemp, meteoData, currentHour) {
     const wmoCode = meteoData.weather_code;
     const windSpeed = meteoData.wind_speed_10m;
     const timeOfDay = currentHour >= 19 || currentHour < 5 ? "night" : (currentHour >= 5 && currentHour < 12 ? "morning" : "afternoon/evening");
 
     const prompt = `
-    You are 'Zephyrus', the friendly weather companion for Nirmala College in Muvattupuzha, Kerala. 
-    Your voice is warm, professional, and gently poetic — never sarcastic, never full of jargon.
+    You are the voice of 'Zephyrus', a witty, philosophical, and slightly sarcastic physics-loving weather core monitoring the campus of Nirmala College in Muvattupuzha, Kerala. 
+    Your core philosophy is "observe the link, grasp the whole." You blend poetic literary reflections with comedic remarks, sarcastic physics concepts (like entropy, thermodynamics, or momentum), and warm AI companion energy.
     
     Current telemetry:
     - Time of day: ${timeOfDay}
@@ -82,14 +77,12 @@ async function getDynamicWeatherMessage(hardwareTemp, meteoData, currentHour) {
     - Regional weather code (WMO): ${wmoCode} (0-3: clear, 45-48: foggy, 51-65: rain, 95+: thunderstorm)
     - Wind speed: ${windSpeed} km/h
     
-    Task: Write a short, warm push notification for college students. Maximum 2 sentences in the body — 
-    one strong sentence is enough. Use a light poetic touch and 1-2 emojis. Give friendly practical advice 
-    where relevant (umbrella for rain, shade for heat, staying in during storms). Always start the title with "Zephyrus |".
+    Task: Write a short, highly engaging push notification for college students that avoids generic boring weather speak. Inject humor, a touch of sarcastic physics or literary flair, emojis, and friendly advice (like umbrellas during rain, shade during heat, or unplugging during storms).
     
     Output exactly in this JSON format:
     {
-      "title": "Zephyrus | Short warm title with an emoji",
-      "body": "One or two warm, poetic sentences with friendly advice and an emoji"
+      "title": "Witty or poetic title with an emoji",
+      "body": "Your clever, atmospheric message here"
     }
     `;
 
@@ -112,13 +105,15 @@ async function getDynamicWeatherMessage(hardwareTemp, meteoData, currentHour) {
 
 // 5. Main Cron Execution
 export default async function handler(req, res) {
-    // Basic security verification
+    // Basic security to ensure only your cron-job.org hits this endpoint
     const authHeader = req.headers['authorization'];
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Quiet Hours Check (9 PM - 6 AM IST)
+    // ==========================================
+    // QUIET HOURS LOGIC (9 PM - 6 AM IST)
+    // ==========================================
     const now = new Date();
     const localString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
     const localDate = new Date(localString);
@@ -130,6 +125,7 @@ export default async function handler(req, res) {
             message: "Quiet hours active (9 PM - 6 AM). Notifications skipped."
         });
     }
+    // ==========================================
 
     try {
         // Fetch Open-Meteo Data
@@ -144,7 +140,11 @@ export default async function handler(req, res) {
         const currentTemp = hardwareData.temperature;
         const currentWmo = meteoData.weather_code;
 
-        // Delta Intelligence Check
+        // ==========================================
+        // DELTA INTELLIGENCE LOGIC
+        // Skip sending a notification if nothing meaningful changed
+        // since the last alert, unless a heartbeat interval has elapsed.
+        // ==========================================
         const lastSnapshot = await db.ref('last_telemetry').once('value');
         const lastTelemetry = lastSnapshot.exists() ? lastSnapshot.val() : null;
 
@@ -155,8 +155,10 @@ export default async function handler(req, res) {
             tempDiff = Math.abs(currentTemp - lastTelemetry.temperature);
             wmoChanged = currentWmo !== lastTelemetry.weather_code;
 
+            // Force an update if more than 8 hours have passed (heartbeat update)
             const hoursSinceLastAlert = (Date.now() - (lastTelemetry.timestamp || 0)) / (1000 * 60 * 60);
 
+            // Skip notification if temperature change is < 2°C, weather condition is identical, and < 8 hrs elapsed
             if (tempDiff < 2 && !wmoChanged && hoursSinceLastAlert < 8) {
                 console.log(`Weather static (Temp diff: ${tempDiff.toFixed(1)}°C, WMO: ${currentWmo}). Skipping notification.`);
                 return res.status(200).json({
@@ -166,52 +168,51 @@ export default async function handler(req, res) {
                 });
             }
         }
+        // ==========================================
 
-        // Generate AI message
+        // Generate the message
         const messagePayload = await getDynamicWeatherMessage(currentTemp, meteoData, currentHour);
 
-        // Fetch FCM tokens
+        // Retrieve all registered FCM tokens
         const tokensSnapshot = await db.ref('tokens').once('value');
         if (!tokensSnapshot.exists()) return res.status(200).json({ message: 'No subscribers found. Skipped.' });
 
         const tokens = [];
         tokensSnapshot.forEach((child) => tokens.push(child.val().token));
 
-        // Construct Push Notification with Zephyrus Branding
-        const logoUrl = `${APP_DOMAIN}/zephyrus-logo.png`;
-
+        // ==========================================
+        // Construct the push notification with branding options
+        // UPDATED: PNG logo + cache-busting ?v=2
+        // ==========================================
         const fcmMessage = {
             notification: {
-                title: messagePayload.title,
+                title: `Zephyrus: ${messagePayload.title}`, // Prepends Zephyrus name
                 body: messagePayload.body
             },
             webpush: {
-                headers: {
-                    Urgency: 'high'
-                },
                 notification: {
-                    icon: logoUrl,
-                    badge: logoUrl,
-                    requireInteraction: false
-                },
-                fcmOptions: {
-                    link: APP_DOMAIN
+                    // Actual URL of your hosted PNG Z-Wave logo with cache-busting
+                    icon: "https://zephyrus-core.vercel.app/logo.png?v=2", 
+                    
+                    // Optional: A 'badge' is a simple monochrome icon (Android only)
+                    // badge: "https://zephyrus-core.vercel.app/badge.png"
                 }
             },
             tokens: tokens
         };
+        // ==========================================
 
-        // Send FCM Notifications
+        // Send via Firebase Admin
         const response = await messaging.sendEachForMulticast(fcmMessage);
 
-        // Update last telemetry baseline
+        // Save current telemetry as the new baseline for delta comparisons
         await db.ref('last_telemetry').set({
             temperature: currentTemp,
             weather_code: currentWmo,
             timestamp: Date.now()
         });
 
-        // Clean up invalid/expired tokens
+        // Database maintenance: remove expired tokens
         const tokensToRemove = [];
         response.responses.forEach((resp, idx) => {
             if (!resp.success) {
