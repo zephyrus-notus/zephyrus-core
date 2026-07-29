@@ -17,10 +17,15 @@ if (!admin.apps.length) {
 const db = admin.database();
 const messaging = admin.messaging();
 
-// 2. Initialize Gemini API Client (Automatically picks up process.env.GEMINI_API_KEY)
+// 2. Initialize Gemini API Client
 const ai = new GoogleGenAI({});
 
-// 3. Robust Fallback Generator (Warm, professional, gently poetic)
+// Base URL for notification branding and click actions
+const APP_DOMAIN = process.env.VERCEL_URL 
+  ? `https://${process.env.VERCEL_URL}` 
+  : 'https://zephyrus-core.vercel.app';
+
+// 3. Robust Fallback Generator
 function getFallbackWeatherMessage(hardwareTemp, meteoData, currentHour) {
     const wmoCode = meteoData.weather_code;
     const windSpeed = meteoData.wind_speed_10m;
@@ -61,7 +66,7 @@ function getFallbackWeatherMessage(hardwareTemp, meteoData, currentHour) {
     return { title, body };
 }
 
-// 4. Dynamic AI Generation (Warm, professional, gently poetic)
+// 4. Dynamic AI Generation
 async function getDynamicWeatherMessage(hardwareTemp, meteoData, currentHour) {
     const wmoCode = meteoData.weather_code;
     const windSpeed = meteoData.wind_speed_10m;
@@ -107,15 +112,13 @@ async function getDynamicWeatherMessage(hardwareTemp, meteoData, currentHour) {
 
 // 5. Main Cron Execution
 export default async function handler(req, res) {
-    // Basic security to ensure only your cron-job.org hits this endpoint
+    // Basic security verification
     const authHeader = req.headers['authorization'];
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // ==========================================
-    // QUIET HOURS LOGIC (9 PM - 6 AM IST)
-    // ==========================================
+    // Quiet Hours Check (9 PM - 6 AM IST)
     const now = new Date();
     const localString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
     const localDate = new Date(localString);
@@ -127,7 +130,6 @@ export default async function handler(req, res) {
             message: "Quiet hours active (9 PM - 6 AM). Notifications skipped."
         });
     }
-    // ==========================================
 
     try {
         // Fetch Open-Meteo Data
@@ -142,11 +144,7 @@ export default async function handler(req, res) {
         const currentTemp = hardwareData.temperature;
         const currentWmo = meteoData.weather_code;
 
-        // ==========================================
-        // DELTA INTELLIGENCE LOGIC
-        // Skip sending a notification if nothing meaningful changed
-        // since the last alert, unless a heartbeat interval has elapsed.
-        // ==========================================
+        // Delta Intelligence Check
         const lastSnapshot = await db.ref('last_telemetry').once('value');
         const lastTelemetry = lastSnapshot.exists() ? lastSnapshot.val() : null;
 
@@ -157,10 +155,8 @@ export default async function handler(req, res) {
             tempDiff = Math.abs(currentTemp - lastTelemetry.temperature);
             wmoChanged = currentWmo !== lastTelemetry.weather_code;
 
-            // Force an update if more than 8 hours have passed (heartbeat update)
             const hoursSinceLastAlert = (Date.now() - (lastTelemetry.timestamp || 0)) / (1000 * 60 * 60);
 
-            // Skip notification if temperature change is < 2°C, weather condition is identical, and < 8 hrs elapsed
             if (tempDiff < 2 && !wmoChanged && hoursSinceLastAlert < 8) {
                 console.log(`Weather static (Temp diff: ${tempDiff.toFixed(1)}°C, WMO: ${currentWmo}). Skipping notification.`);
                 return res.status(200).json({
@@ -170,44 +166,52 @@ export default async function handler(req, res) {
                 });
             }
         }
-        // ==========================================
 
-        // Generate the message
+        // Generate AI message
         const messagePayload = await getDynamicWeatherMessage(currentTemp, meteoData, currentHour);
 
-        // Retrieve all registered FCM tokens
+        // Fetch FCM tokens
         const tokensSnapshot = await db.ref('tokens').once('value');
         if (!tokensSnapshot.exists()) return res.status(200).json({ message: 'No subscribers found. Skipped.' });
 
         const tokens = [];
         tokensSnapshot.forEach((child) => tokens.push(child.val().token));
 
-        // Construct the push notification (with Zephyrus branding + logo icon/badge)
+        // Construct Push Notification with Zephyrus Branding
+        const logoUrl = `${APP_DOMAIN}/zephyrus-logo.png`;
+
         const fcmMessage = {
             notification: {
                 title: messagePayload.title,
                 body: messagePayload.body
             },
             webpush: {
+                headers: {
+                    Urgency: 'high'
+                },
                 notification: {
-                    icon: "https://your-domain.vercel.app/zephyrus-icon-192.png",
-                    badge: "https://your-domain.vercel.app/zephyrus-icon-192.png"
+                    icon: logoUrl,
+                    badge: logoUrl,
+                    requireInteraction: false
+                },
+                fcmOptions: {
+                    link: APP_DOMAIN
                 }
             },
             tokens: tokens
         };
 
-        // Send via Firebase Admin
+        // Send FCM Notifications
         const response = await messaging.sendEachForMulticast(fcmMessage);
 
-        // Save current telemetry as the new baseline for delta comparisons
+        // Update last telemetry baseline
         await db.ref('last_telemetry').set({
             temperature: currentTemp,
             weather_code: currentWmo,
             timestamp: Date.now()
         });
 
-        // Database maintenance: remove expired tokens
+        // Clean up invalid/expired tokens
         const tokensToRemove = [];
         response.responses.forEach((resp, idx) => {
             if (!resp.success) {
