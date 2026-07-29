@@ -20,56 +20,56 @@ const messaging = admin.messaging();
 // 2. Initialize Gemini API Client (Automatically picks up process.env.GEMINI_API_KEY)
 const ai = new GoogleGenAI({});
 
-// 3. Robust Fallback Generator (Infused with physics sarcasm, literature, and wit)
+// 3. Robust Fallback Generator (Warm, professional, gently poetic)
 function getFallbackWeatherMessage(hardwareTemp, meteoData, currentHour) {
     const wmoCode = meteoData.weather_code;
     const windSpeed = meteoData.wind_speed_10m;
     const isNight = currentHour >= 19 || currentHour < 5;
     const isMorning = currentHour >= 5 && currentHour < 12;
 
-    let title = "Zephyrus Core";
+    let title = "Zephyrus Weather Update";
     let body = "";
 
     if (wmoCode >= 95) {
-        title = "Maxwell's equations are crying! ⚡";
-        body = "Entropy is throwing an absolute party in the atmosphere. Unplug your sensitive electronics, stay indoors, and enjoy the cosmic light show safely. ⛈️";
+        title = "Zephyrus | Storm Watch ⚡";
+        body = "Thunder's rolling over the hills tonight 🌩️ — stay indoors and keep devices unplugged.";
     } else if (wmoCode >= 51 && wmoCode <= 65) {
-        title = isMorning ? "The sky chose drama today! ☔" : "Existential puddle season has begun. 🌧️";
-        body = "Don't let the atmospheric condensation ruin your mood. Grab your umbrella, navigate the terrain like a physicist avoiding friction, and maybe find a hot tea. ☕";
+        title = isMorning ? "Zephyrus | Rainy Start ☔" : "Zephyrus | Gentle Showers 🌧️";
+        body = "Rain is tapping softly on the campus roof today — keep an umbrella close and stay dry.";
     } else if (hardwareTemp >= 35) {
-        title = "Thermodynamics is personally attacking us. 🔥";
-        body = `Whew, it's hitting ${hardwareTemp}°C! Molecular kinetic energy is entirely off the charts. Find some shade, hydrate aggressively, and take it easy out there. 💧`;
+        title = "Zephyrus | Heat Advisory 🔥";
+        body = `It's a warm one today at ${hardwareTemp}°C — stay hydrated and find some shade. 💧`;
     } else if (windSpeed > 15) {
-        title = "Momentum transfer is getting out of hand! 🌬️";
-        body = "Hold onto your hats and loose papers. The atmosphere has chosen pure chaos today—secure your gear before it achieves escape velocity.";
+        title = "Zephyrus | Windy Skies 🌬️";
+        body = "A brisk breeze is sweeping through campus — hold onto your hats and loose papers.";
     } else if (wmoCode === 0 || wmoCode <= 3) {
         if (isMorning) {
-            title = "A crisp quantum sunrise! 🌅";
-            body = "The universe decided to render a clear sky this morning. Leave the umbrella behind, step outside, and let reality unfold nicely.";
+            title = "Zephyrus | Clear Morning 🌅";
+            body = "A beautifully clear sky greets Nirmala College this morning — enjoy the sunshine ☀️.";
         } else if (isNight) {
-            title = "The stars are conspiring in silence. 🌌";
-            body = "Observe the link, grasp the whole. The local spacetime continuum is completely peaceful. Have a quiet, low-entropy night.";
+            title = "Zephyrus | Quiet Night 🌌";
+            body = "The stars are out in full tonight — a calm, peaceful evening across campus.";
         } else {
-            title = "Reality is looking surprisingly pristine. 🌤️";
-            body = "No clouds, no drama—just a clean gradient of blue. Take a deep breath and enjoy the clear telemetry outside.";
+            title = "Zephyrus | Clear Skies 🌤️";
+            body = "Blue skies all around today — a lovely afternoon to step outside for a bit.";
         }
     } else {
-        title = "System nominal. 🍃";
-        body = "Monitoring environmental parameters. Everything is flowing exactly as the equations intended.";
+        title = "Zephyrus | All Clear 🍃";
+        body = "Conditions are calm and steady on campus — have a pleasant day ahead.";
     }
 
     return { title, body };
 }
 
-// 4. Dynamic AI Generation (With sarcastic physics and poetic depth)
+// 4. Dynamic AI Generation (Warm, professional, gently poetic)
 async function getDynamicWeatherMessage(hardwareTemp, meteoData, currentHour) {
     const wmoCode = meteoData.weather_code;
     const windSpeed = meteoData.wind_speed_10m;
     const timeOfDay = currentHour >= 19 || currentHour < 5 ? "night" : (currentHour >= 5 && currentHour < 12 ? "morning" : "afternoon/evening");
 
     const prompt = `
-    You are the voice of 'Zephyrus', a witty, philosophical, and slightly sarcastic physics-loving weather core monitoring the campus of Nirmala College in Muvattupuzha, Kerala. 
-    Your core philosophy is "observe the link, grasp the whole." You blend poetic literary reflections with comedic remarks, sarcastic physics concepts (like entropy, thermodynamics, or momentum), and warm AI companion energy.
+    You are 'Zephyrus', the friendly weather companion for Nirmala College in Muvattupuzha, Kerala. 
+    Your voice is warm, professional, and gently poetic — never sarcastic, never full of jargon.
     
     Current telemetry:
     - Time of day: ${timeOfDay}
@@ -77,12 +77,14 @@ async function getDynamicWeatherMessage(hardwareTemp, meteoData, currentHour) {
     - Regional weather code (WMO): ${wmoCode} (0-3: clear, 45-48: foggy, 51-65: rain, 95+: thunderstorm)
     - Wind speed: ${windSpeed} km/h
     
-    Task: Write a short, highly engaging push notification for college students that avoids generic boring weather speak. Inject humor, a touch of sarcastic physics or literary flair, emojis, and friendly advice (like umbrellas during rain, shade during heat, or unplugging during storms).
+    Task: Write a short, warm push notification for college students. Maximum 2 sentences in the body — 
+    one strong sentence is enough. Use a light poetic touch and 1-2 emojis. Give friendly practical advice 
+    where relevant (umbrella for rain, shade for heat, staying in during storms). Always start the title with "Zephyrus |".
     
     Output exactly in this JSON format:
     {
-      "title": "Witty or poetic title with an emoji",
-      "body": "Your clever, atmospheric message here"
+      "title": "Zephyrus | Short warm title with an emoji",
+      "body": "One or two warm, poetic sentences with friendly advice and an emoji"
     }
     `;
 
@@ -180,11 +182,17 @@ export default async function handler(req, res) {
         const tokens = [];
         tokensSnapshot.forEach((child) => tokens.push(child.val().token));
 
-        // Construct the push notification
+        // Construct the push notification (with Zephyrus branding + logo icon/badge)
         const fcmMessage = {
             notification: {
                 title: messagePayload.title,
                 body: messagePayload.body
+            },
+            webpush: {
+                notification: {
+                    icon: "https://your-domain.vercel.app/zephyrus-icon-192.png",
+                    badge: "https://your-domain.vercel.app/zephyrus-icon-192.png"
+                }
             },
             tokens: tokens
         };
