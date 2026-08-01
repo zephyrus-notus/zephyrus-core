@@ -17,8 +17,10 @@ if (!admin.apps.length) {
 const db = admin.database();
 const messaging = admin.messaging();
 
-// 2. Initialize Gemini API Client (Automatically picks up process.env.GEMINI_API_KEY)
-const ai = new GoogleGenAI({});
+// 2. Initialize Gemini API Client (Explicitly injected to prevent Vercel ADC crash)
+const ai = new GoogleGenAI({ 
+    apiKey: process.env.GEMINI_API_KEY 
+});
 
 // 3. Robust Fallback Generator (Infused with physics sarcasm, literature, and wit)
 function getFallbackWeatherMessage(hardwareTemp, meteoData, currentHour) {
