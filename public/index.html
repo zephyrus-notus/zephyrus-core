@@ -1018,16 +1018,60 @@
                 .catch(() => {});
         }
 
-        function syncNotifToggleWithPermission() {
-            notifToggle.checked = (Notification.permission === "granted");
-        }
-        syncNotifToggleWithPermission();
+        // UPDATED LOGIC: Syncs browser permission AND Firebase Database existence
+        async function syncNotifToggleWithPermission() {
+            // 1. Initial check: Does the browser allow notifications?
+            if (Notification.permission !== "granted") {
+                notifToggle.checked = false;
+                return;
+            }
 
-        function maybeShowNotifPopup() {
-            if (!modalDismissed && Notification.permission === "default") notifModal.classList.add('visible');
+            // 2. If browser allows it, verify the token actually exists in Firebase
+            try {
+                if (!messagingInstance) messagingInstance = getMessaging(app);
+                
+                // Get the current device token
+                const token = await getToken(messagingInstance, { vapidKey: VAPID_PUBLIC_KEY });
+                
+                if (token) {
+                    // Clean it to match your database key format
+                    const tokenKey = token.replace(/[^a-zA-Z0-9]/g, "").slice(-64);
+                    
+                    // Check if this key exists in the database
+                    const tokenSnap = await get(ref(db, `tokens/${tokenKey}`));
+                    
+                    if (tokenSnap.exists()) {
+                        notifToggle.checked = true; // Token exists, keep toggle ON
+                    } else {
+                        // Token was deleted by backend cleanup! Turn the toggle OFF.
+                        notifToggle.checked = false;
+                        logTerminal("Notice: Device token missing from server. Alerts toggled OFF.");
+                    }
+                } else {
+                    notifToggle.checked = false;
+                }
+            } catch (err) {
+                console.log("Could not verify token in database.", err);
+                notifToggle.checked = false;
+            }
         }
         
-        // Corrected typo from 'wwindow' to 'window'
+        // Execute the sync on load
+        syncNotifToggleWithPermission();
+
+        // UPDATED LOGIC: 3-Day Cooldown on popups
+        function maybeShowNotifPopup() {
+            if (!modalDismissed && Notification.permission === "default") {
+                const lastDismissedStr = localStorage.getItem('zephyrus_popup_dismissed');
+                const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+                
+                // If it was never dismissed, or if it has been more than 3 days since the last dismissal
+                if (!lastDismissedStr || (Date.now() - parseInt(lastDismissedStr)) > threeDaysMs) {
+                    notifModal.classList.add('visible');
+                }
+            }
+        }
+        
         window.enableNotifications = function() {
             modalDismissed = true;
             notifModal.classList.remove('visible');
@@ -1053,13 +1097,15 @@
             });
         };
         
+        // UPDATED LOGIC: Saves dismissal timestamp for 3-day wait
         window.dismissModal = function() {
             modalDismissed = true;
+            // Record the exact time the user clicked "Maybe Later"
+            localStorage.setItem('zephyrus_popup_dismissed', Date.now().toString());
             notifModal.classList.remove('visible');
             notifToggle.checked = false;
         };
         
-        // Upgraded toggle logic to allow turning alerts OFF by removing the token from the database
         notifToggle.addEventListener('change', async (e) => {
             if (e.target.checked) {
                 if (Notification.permission === "granted") {
